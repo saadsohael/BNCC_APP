@@ -1,0 +1,124 @@
+WindowManager:
+    LogInScreen:
+    AdminLogScreen:
+    AdminDash:
+    CadetDash:
+
+<LogInScreen>:
+    name: "LogInScreen"
+    BoxLayout:
+
+        orientation: "vertical"
+
+        GridLayout:
+            cols: 1
+            rows: 2
+
+            GridLayout:
+                cols: 2
+                rows: 1
+                Label:
+                    size_hint: 0.9,1
+                    text: "RC BNCC APP"
+                    haling: "center"
+                    valing: "middle"
+                Label:
+                    size_hint: 0.1,1
+                    text: "logo"
+
+            Label:
+                id: log_in_label
+                text: "Cadet Log In"
+
+        GridLayout:
+            cols: 1
+            rows: 2
+
+            GridLayout:
+                cols: 2
+                rows: 1
+                Label:
+                    text: "USER ID/ EMAIL"
+                TextInput:
+                    hint_text: "type userid/email here..."
+
+            GridLayout:
+                cols: 2
+                rows: 1
+                Label:
+                    text: "Password"
+                TextInput:
+                    hint_text: "type password here..."
+
+        Button:
+            text: "Log In"
+
+        GridLayout:
+            cols: 1
+            rows: 2
+
+            Button:
+                text: "Forgot Password?"
+            Button:
+                text: "Go To Admin Login"
+
+
+<AdminLogScreen>:
+
+    name: "AdminLogScreen"
+    BoxLayout:
+
+        orientation: "vertical"
+
+        GridLayout:
+            cols: 1
+            rows: 2
+
+            GridLayout:
+                cols: 2
+                rows: 1
+                Label:
+                    size_hint: 0.9,1
+                    text: "RC BNCC APP"
+                    haling: "center"
+                    valing: "middle"
+                Label:
+                    size_hint: 0.1,1
+                    text: "logo"
+
+            Label:
+                id: log_in_label
+                text: "Admin Log In"
+
+        GridLayout:
+            cols: 1
+            rows: 2
+
+            GridLayout:
+                cols: 2
+                rows: 1
+                Label:
+                    text: "USER ID/ EMAIL"
+                TextInput:
+                    hint_text: "type userid/email here..."
+
+            GridLayout:
+                cols: 2
+                rows: 1
+                Label:
+                    text: "Password"
+                TextInput:
+                    hint_text: "type password here..."
+
+        Button:
+            text: "Log In"
+
+        Button:
+            text: "Forgot Password?"
+
+
+<CadetDash>:
+    name: "CadetDash"
+
+<AdminDash>:
+    name: "AdminDash"
