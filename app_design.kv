@@ -1,0 +1,242 @@
+WindowManager:
+    LoginScreen:
+    SettingsScreen:
+    AdminDash:
+    CadetDash:
+    CadetsInfoScreen:
+    NoticeScreen:
+    AboutScreen:
+
+#: import utils kivy.utils
+
+<LoginScreen>:
+    name: "LoginScreen"
+
+    MDNavigationLayout:
+        ScreenManager:
+            Screen:
+                BoxLayout:
+                    orientation: "vertical"
+
+                    MDToolbar:
+                        title: "RC BNCC"
+                        elevation: "7dp"
+
+                        Image:
+                            source: "Bncc_logo.png"
+                            pos: (((self.parent.size[0])/1.5)-20,self.pos[1])
+
+                    Widget:
+
+    MDLabel:
+        id: login_label
+        text: "Cadet Login"
+        pos_hint: {"center_x":0.78,"center_y":0.76}
+        font_style: "H5"
+
+    BoxLayout:
+        orientation: 'vertical'
+        pos_hint: {"center_x":0.5,"center_y":0.2}
+
+        GridLayout:
+            cols: 1
+            rows: 4
+            size_hint_x: None
+            width: "220sp"
+            pos_hint: {"center_x":0.5,"center_y":0.5}
+            spacing : "8sp"
+
+            MDTextField:
+                id: username_textfield
+                hint_text: "Type Username or Email"
+                helper_text: "or click forgot account"
+                helper_text_mode: "on_focus"
+                icon_right: "account"
+                icon_right_color: "white" if app.theme_cls.theme_style == "Dark" else "black"
+                text_color: "white" if app.theme_cls.theme_style == "Dark" else "black"
+
+            MDTextField:
+                id: password_textfield
+                hint_text: "Type Password"
+                helper_text: "or click forgot account"
+                helper_text_mode: "on_focus"
+                icon_right: "key"
+                icon_right_color: "white" if app.theme_cls.theme_style == "Dark" else "black"
+                text_color: "white" if app.theme_cls.theme_style == "Dark" else "black"
+
+            GridLayout:
+                cols: 2
+                rows: 1
+                spacing: "20sp"
+
+                MDRectangleFlatButton:
+                    id: log_in
+                    text: "Log In"
+                    on_release:
+                        root.log_in_btn()
+
+                MDRectangleFlatButton:
+                    text: "Forgot Password"
+
+    MDRaisedButton:
+        id: change_user
+        text: "Go to Admin Login"
+        pos_hint: {"center_x":0.48,"center_y":0.26}
+        font_style: "Caption"
+        on_release:
+            username_textfield.text = ''
+            password_textfield.text = ''
+            if change_user.text == "Go to Admin Login": \
+            login_label.text = "Admin Login"; \
+            change_user.text = "Go to Cadet Login";
+            else: \
+            login_label.text = "Cadet Login"; \
+            change_user.text = "Go to Admin Login";
+
+    MDLabel:
+        text: "OR"
+        pos_hint: {"center_x":0.95,"center_y":0.18}
+        font_style: "Caption"
+
+    MDRectangleFlatButton:
+        id: apply_btn
+        text: "Apply to be Cadet"
+        text_color: utils.get_color_from_hex("#4298f5")
+        line_width: .1
+        pos_hint: {"center_x":0.48,"center_y":0.12}
+        font_style: "Subtitle1"
+        on_release:
+
+
+
+<AdminDash>:
+    name: "AdminDash"
+
+    #MDBoxLayout:
+    #orientation: 'vertical'
+    #pos_hint_x: None
+    #pos_hint_y: None
+    #pos: (root.width//2 - (self.width//2 - dp(60)), root.height//2 - self.height+dp(90))
+
+    MDGridLayout:
+        cols: 1
+        rows: 4
+        spacing: 40
+        padding: 20
+        pos: (root.width//2 - (self.width//2 - dp(60)), root.height//2 - self.height+dp(90))
+        MDRaisedButton:
+            text: "Cadet Applications"
+            md_bg_color: utils.get_color_from_hex("#3067ddff")
+
+        MDRaisedButton:
+            text: "Pre-Selection Criteria"
+            md_bg_color: utils.get_color_from_hex("#3067ddff")
+
+        MDRaisedButton:
+            text: "Post-Selection Criteria"
+            md_bg_color: utils.get_color_from_hex("#3067ddff")
+
+        MDRaisedButton:
+            text: "Create Notice"
+            md_bg_color: utils.get_color_from_hex("#3067ddff")
+
+    MDNavigationLayout:
+        ScreenManager:
+            Screen:
+                BoxLayout:
+                    orientation: "vertical"
+                    MDToolbar:
+                        title: "RC BNCC"
+                        elevation: "8sp"
+                        left_action_items: [["menu", lambda x : nav_drawer.set_state("toggle")]]
+
+                        Image:
+                            source: "Bncc_logo.png"
+                            pos: (((self.parent.size[0])/1.5)-20,self.pos[1])
+
+
+                    Widget:
+
+    MDNavigationDrawer:
+        id: nav_drawer
+        size_hint_x: None
+        width: root.width * (3/4)
+
+        BoxLayout:
+            orientation: "vertical"
+            padding: 30, 60
+            spacing : 20
+
+            MDLabel:
+                text: "Admin Dash"
+                size_hint_y: None
+                height: self.texture_size[1]
+                padding: (80,20)
+
+            ScrollView:
+                MDList:
+                    OneLineListItem:
+                        text: "Profile"
+                        on_release:
+                            root.manager.current = "AdminProfile"
+
+                    OneLineListItem:
+                        text: "Cadets Info"
+                        on_release:
+                            root.manager.current = "CadetsInfoScreen"
+
+                    OneLineListItem:
+                        text: "Notice Board"
+                        on_release:
+                            root.manager.current = "NoticeScreen"
+
+                    OneLineListItem:
+                        text: "About"
+                        on_release:
+                            root.manager.current = "AboutScreen"
+
+                    OneLineListItem:
+                        text: "Settings"
+                        on_release:
+                            root.manager.current = "SettingsScreen"
+
+                    OneLineListItem:
+                        text: "Log Out"
+                        on_release:
+                            root.manager.current = "LoginScreen"
+                            nav_drawer.set_state("toggle")
+
+<CadetsInfoScreen>:
+    name: "CadetsInfoScreen"
+
+<NoticeScreen>:
+    name: "NoticeScreen"
+
+<AboutScreen>:
+    name: "AboutScreen"
+    MDLabel:
+        text: "Made by Saad Ibne Sohael"
+        pos_hint: {"center_x":0.5,"center_y":0.5}
+
+<SettingsScreen>:
+    name: "SettingsScreen"
+
+    MDBoxLayout:
+        ScrollView:
+            MDList:
+
+                OneLineListItem:
+                    id: theme_changer
+                    text: f"Current theme : {app.theme_cls.theme_style}"
+                    color: "white" if app.theme_cls.theme_style == "Dark" else "black"
+                    on_press:
+                        root.change_theme()
+                        app.update_theme()
+                        theme_changer.text = f"Current theme : {app.theme_cls.theme_style}"
+
+
+                    MDToolbar:
+                        text: "Theme Style"
+                        right_action_items: [["theme-light-dark"]]
+                        theme_text_color: "Custom"
+                        md_bg_color: [1,0,0,0]
