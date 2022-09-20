@@ -8,12 +8,30 @@ Window.size = (300, 500)
 
 dataHandler.create_primary_app_data()
 
+under_login_screen = ["AdminDash", "CadetDash"]
+under_admin_dash = ["CadetsInfoScreen", "AdminProfile"]
+under_cadet_dash = ["CadetDash"]
+common_screens = ["NoticeScreen", "AboutScreen", "SettingsScreen"]
+
 
 class WindowManager(ScreenManager):
     pass
 
 
 class LoginScreen(Screen):
+
+    def __init__(self, **kwargs):
+        super(LoginScreen, self).__init__(**kwargs)
+        Window.bind(on_keyboard=self._key_handler)
+
+    def _key_handler(self, instance, key, *args):
+        if key is 27:
+            if self.manager.current != "LoginScreen":
+                self.go_back()
+            else:
+                exit()
+            return True
+
     def log_in_btn(self):
         if self.ids.login_label.text == "Admin Login":
             if dataHandler.is_admin(self.ids.username_textfield.text, self.ids.password_textfield.text):
@@ -21,12 +39,24 @@ class LoginScreen(Screen):
                 self.ids.username_textfield.text = ''
                 self.ids.password_textfield.text = ''
 
+    def go_back(self):
+        if self.manager.current in under_login_screen:
+            self.manager.current = "LoginScreen"
+        elif self.manager.current in under_admin_dash:
+            self.manager.current = "AdminDash"
+        elif self.manager.current in common_screens:
+            if self.
+
 
 class AdminDash(Screen):
     pass
 
 
 class CadetDash(Screen):
+    pass
+
+
+class AdminProfile(Screen):
     pass
 
 
@@ -48,11 +78,6 @@ class SettingsScreen(Screen):
 
     def change_theme(self):
         app = MainApp()
-        # theme_style = app.theme_cls.theme_style
-        # if theme_style == "Dark":
-        #     theme_style = "Light"
-        # else:
-        #     theme_style = "Dark"
         content = dataHandler.query_primary_app_data()[0]
         if content == "Light":
             dataHandler.update_primary_app_data('theme_color', 'Dark')
