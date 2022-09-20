@@ -2,6 +2,64 @@ import mysql.connector
 import bcrypt
 
 
+def update_primary_app_data(column_name, new_data):
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        passwd="saad1122002",
+        database="first_db"
+    )
+
+    cursor = db.cursor()
+    cursor.execute(f"UPDATE primary_app_data SET {column_name} = (%s)", (new_data,))
+    db.commit()
+    db.close()
+
+
+def query_primary_app_data():
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        passwd="saad1122002",
+        database="first_db"
+    )
+
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM primary_app_data")
+    data = []
+    for v in cursor:
+        data.append(v)
+
+    db.close()
+
+    return data[0]
+
+
+def create_primary_app_data():
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        passwd="saad1122002",
+        database="first_db"
+    )
+
+    cursor = db.cursor()
+    cursor.execute("""CREATE TABLE IF NOT EXISTS primary_app_data(
+                    theme_color VARCHAR(255))""")
+    db.commit()
+
+    cursor.execute("SELECT theme_color FROM primary_app_data")
+
+    theme = ''
+    for v in cursor:
+        theme = v
+    if theme == '':
+        cursor.execute("INSERT INTO primary_app_data VALUES('Light')")
+        db.commit()
+
+    db.close()
+
+
 def create_admin():
     db = mysql.connector.connect(
         host="localhost",

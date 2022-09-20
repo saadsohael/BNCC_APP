@@ -6,6 +6,8 @@ from kivy.core.window import Window
 
 Window.size = (300, 500)
 
+dataHandler.create_primary_app_data()
+
 
 class WindowManager(ScreenManager):
     pass
@@ -51,15 +53,12 @@ class SettingsScreen(Screen):
         #     theme_style = "Light"
         # else:
         #     theme_style = "Dark"
-        with open("color.txt", "r") as clr_file:
-            content = clr_file.read()
+        content = dataHandler.query_primary_app_data()[0]
         if content == "Light":
-            with open("color.txt", "w") as clr_file:
-                clr_file.write("Dark")
+            dataHandler.update_primary_app_data('theme_color', 'Dark')
             app.update_theme()
         else:
-            with open("color.txt", "w") as clr_file:
-                clr_file.write("Light")
+            dataHandler.update_primary_app_data('theme_color', 'Light')
             app.update_theme()
 
 
@@ -68,15 +67,13 @@ class MainApp(MDApp):
     def build(self):
         self.title = "App By SIS"
         self.theme_cls.primary_palette = "Green"
-        with open("color.txt", "r") as clr_file:
-            content = clr_file.read()
+        content = dataHandler.query_primary_app_data()[0]
         self.theme_cls.theme_style = content
         kvFile = Builder.load_file("app_design.kv")
         return kvFile
 
     def update_theme(self):
-        with open("color.txt", "r") as clr_file:
-            content = clr_file.read()
+        content = dataHandler.query_primary_app_data()[0]
         self.theme_cls.theme_style = content
 
 
