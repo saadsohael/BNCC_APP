@@ -8,9 +8,9 @@ Window.size = (300, 500)
 
 dataHandler.create_primary_app_data()
 
-under_login_screen = ["AdminDash", "CadetDash"]
+under_login_screen = ["AdminDash", "CadetDash", "ApplicationWindow"]
 under_admin_dash = ["CadetsInfoScreen", "AdminProfile"]
-under_cadet_dash = ["CadetDash"]
+under_cadet_dash = []
 common_screens = ["NoticeScreen", "AboutScreen", "SettingsScreen"]
 
 
@@ -44,8 +44,13 @@ class LoginScreen(Screen):
             self.manager.current = "LoginScreen"
         elif self.manager.current in under_admin_dash:
             self.manager.current = "AdminDash"
+        elif self.manager.current in under_cadet_dash:
+            self.manager.current = "CadetDash"
         elif self.manager.current in common_screens:
-            if self.
+            if self.ids.login_label.text == "Admin Login":
+                self.manager.current = "AdminDash"
+            else:
+                self.manager.current = "CadetDash"
 
 
 class AdminDash(Screen):
@@ -53,6 +58,10 @@ class AdminDash(Screen):
 
 
 class CadetDash(Screen):
+    pass
+
+
+class ApplicationWindow(Screen):
     pass
 
 
