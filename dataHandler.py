@@ -3,44 +3,91 @@ import bcrypt
 import sqlite3
 
 
-def update_primary_app_data(column_name, new_data):
-    db = sqlite3.connect("app_data.db")
+def update_app_data(table_name, column_name, new_data):
+    if table_name == 'static_app_data':
+        db = sqlite3.connect("app_data.db")
+    else:
+        db = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            passwd="saad1122002",
+            database="first_db"
+        )
+
     cursor = db.cursor()
 
-    cursor.execute(f"UPDATE primary_app_data SET {column_name} = (?)", (new_data,))
+    cursor.execute(f"UPDATE {table_name} SET {column_name} = (?)", (new_data,))
     db.commit()
     db.close()
 
 
-def query_primary_app_data():
-    db = sqlite3.connect("app_data.db")
+def query_app_data(table_name):
+    if table_name == 'static_app_data':
+        db = sqlite3.connect("app_data.db")
+    else:
+        db = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            passwd="saad1122002",
+            database="first_db"
+        )
 
     cursor = db.cursor()
-    cursor.execute("SELECT * FROM primary_app_data")
+    cursor.execute(f"SELECT * FROM {table_name}")
     data = cursor.fetchall()
     db.close()
     for v in data:
         return v
 
 
-def create_primary_app_data():
+def create_app_data():
     db = sqlite3.connect("app_data.db")
 
     cursor = db.cursor()
-    cursor.execute("""CREATE TABLE IF NOT EXISTS primary_app_data(theme_color text)""")
+    cursor.execute("""CREATE TABLE IF NOT EXISTS static_app_data(theme_color text)""")
     db.commit()
 
-    cursor.execute("SELECT theme_color FROM primary_app_data")
+    cursor.execute("SELECT theme_color FROM static_app_data")
     data = cursor.fetchall()
 
     theme = ''
     for v in data:
         theme = data
     if theme == '':
-        cursor.execute("INSERT INTO primary_app_data VALUES('Light')")
+        cursor.execute("INSERT INTO static_app_data VALUES('Light')")
         db.commit()
 
     db.close()
+
+    online_db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        passwd="saad1122002",
+        database="first_db"
+    )
+
+    form_items = ["Name : ",
+                  "Father's Name : ",
+                  "Mother's Name : ",
+                  "Permanent Address : ",
+                  "Height : ",
+                  "Width : ",
+                  "Any Genetic Disorder : "]
+    primary_application_form = repr(form_items)
+
+    c = online_db.cursor()
+    c.execute("""CREATE TABLE IF NOT EXISTS dynamic_app_data(application_form VARCHAR(999))""")
+
+    c.execute("SELECT application_form FROM dynamic_app_data")
+
+    application_form_items = ''
+    for v in c:
+        application_form_items = v
+    if application_form_items == '':
+        c.execute("INSERT INTO dynamic_app_data VALUES(%s)", (primary_application_form,))
+        online_db.commit()
+
+    online_db.close()
 
 
 def is_admin(admin_username, admin_password):

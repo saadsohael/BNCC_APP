@@ -1,6 +1,6 @@
 WindowManager:
-    ApplicationWindow:
     LoginScreen:
+    ApplicationWindow:
     AdminDash:
     CadetDash:
     AdminProfile:
@@ -108,6 +108,7 @@ WindowManager:
         pos_hint: {"center_x":0.48,"center_y":0.12}
         font_style: "Subtitle1"
         on_release:
+            root.manager.get_screen("ApplicationWindow").create_form()
             root.manager.current = "ApplicationWindow"
 
 
@@ -216,7 +217,6 @@ WindowManager:
     name: "ApplicationWindow"
 
     MDBoxLayout:
-        #pos_hint: {'center_x':0.5, 'top': 0.9}
         size_hint_y: None
         height: root.height - dp(60)
 
@@ -231,50 +231,17 @@ WindowManager:
                     pos_hint_y: 1
                     spacing: 30
                     padding: 18
-
-                    MDLabel:
-                        size_hint_x: 0.55
-                        text: "Name : "
-                    MDTextField:
-                        mode: "rectangle"
-
-                    MDLabel:
-                        size_hint_x: 0.55
-                        text: "Father's Name : "
-                    MDTextField:
-                        mode: "rectangle"
-                        normal_color: app.theme_cls.accent_color
-                        color_active: 1, 0, 0, 1
-
-                    MDLabel:
-                        size_hint_x: 0.55
-                        text: "Mother's Name : "
-                    MDTextField:
-                        mode: "rectangle"
-
-                    MDLabel:
-                        size_hint_x: 0.55
-                        text: "Permanent Address : "
-                    MDTextField:
-                        mode: "rectangle"
-
-                    MDLabel:
-                        size_hint_x: 0.55
-                        text: "Height : "
-                    MDTextField:
-                        mode: "rectangle"
-
-                    MDLabel:
-                        size_hint_x: 0.55
-                        text: "Width : "
-                    MDTextField:
-                        mode: "rectangle"
-
-                    MDLabel:
-                        size_hint_x: 0.55
-                        text: "Any Genetic Disorder : "
-                    MDTextField:
-                        mode: "rectangle"
+                MDGridLayout:
+                    cols: 2
+                    rows: 1
+                    size_hint: None, None
+                    size: ((root.width - dp(30)),self.minimum_height)
+                    padding: 150, 20, 150, 20
+                    spacing : 30
+                    MDRectangleFlatButton:
+                        text: "Apply"
+                    MDRectangleFlatButton:
+                        text: "Go Back"
 
     MDNavigationLayout:
         ScreenManager:
