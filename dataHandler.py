@@ -6,6 +6,10 @@ import sqlite3
 def update_app_data(table_name, column_name, new_data):
     if table_name == 'static_app_data':
         db = sqlite3.connect("app_data.db")
+        cursor = db.cursor()
+
+        cursor.execute(f"UPDATE {table_name} SET {column_name} = (?)", (new_data,))
+        db.commit()
     else:
         db = mysql.connector.connect(
             host="localhost",
@@ -13,12 +17,23 @@ def update_app_data(table_name, column_name, new_data):
             passwd="saad1122002",
             database="first_db"
         )
+        cursor = db.cursor()
 
-    cursor = db.cursor()
+        cursor.execute(f"UPDATE {table_name} SET {column_name} = (%s)", (new_data,))
+        db.commit()
 
-    cursor.execute(f"UPDATE {table_name} SET {column_name} = (?)", (new_data,))
-    db.commit()
     db.close()
+#
+#
+# form_items = ["Saad : ",
+#               "Name : ",
+#               "Father's Name : ",
+#               "Mother's Name : ",
+#               "Permanent Address : ",
+#               "Height : ",
+#               "Width : ",
+#               "Any Genetic Disorder : "]
+# update_app_data("dynamic_app_data", "application_form", repr(form_items))
 
 
 def query_app_data(table_name):

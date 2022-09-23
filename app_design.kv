@@ -1,10 +1,12 @@
 WindowManager:
     LoginScreen:
-    ApplicationWindow:
+    ApplicationFormWindow:
+    EditFormWindow:
     AdminDash:
-    CadetDash:
+    ApplyCadetScreen:
     AdminProfile:
     CadetsInfoScreen:
+    CadetDash:
     NoticeScreen:
     AboutScreen:
     SettingsScreen:
@@ -22,7 +24,7 @@ WindowManager:
 
                     MDToolbar:
                         title: "RC BNCC"
-                        elevation: "7dp"
+                        elevation: sp(7)
 
                         Image:
                             source: "Bncc_logo.png"
@@ -108,8 +110,8 @@ WindowManager:
         pos_hint: {"center_x":0.48,"center_y":0.12}
         font_style: "Subtitle1"
         on_release:
-            root.manager.get_screen("ApplicationWindow").create_form()
-            root.manager.current = "ApplicationWindow"
+            root.manager.get_screen("ApplyCadetScreen").create_form()
+            root.manager.current = "ApplyCadetScreen"
 
 
 
@@ -121,16 +123,19 @@ WindowManager:
         rows: 4
         spacing: 40
         padding: 20
-        pos: (root.width//2 - (self.width//2 - dp(60)), root.height//2 - self.height+dp(90))
+        pos: (root.width//2 - (self.width//2 - sp(60)), root.height//2 - self.height+sp(90))
         MDRaisedButton:
             text: "Cadet Applications"
             md_bg_color: utils.get_color_from_hex("#3067ddff")
             on_release:
 
         MDRaisedButton:
-            text: "Pre-Selection Criteria"
+            text: "Application Form"
             md_bg_color: utils.get_color_from_hex("#3067ddff")
             on_release:
+                root.manager.get_screen("ApplicationFormWindow").show_form()
+                root.manager.current = "ApplicationFormWindow"
+
 
         MDRaisedButton:
             text: "Post-Selection Criteria"
@@ -149,7 +154,7 @@ WindowManager:
                     orientation: "vertical"
                     MDToolbar:
                         title: "RC BNCC"
-                        elevation: "8sp"
+                        elevation: sp(8)
                         left_action_items: [["menu", lambda x : nav_drawer.set_state("toggle")]]
 
                         Image:
@@ -206,19 +211,18 @@ WindowManager:
                         text: "Log Out"
                         on_release:
                             root.manager.current = "LoginScreen"
-                            nav_drawer.set_state("toggle")
-
+                            root.manager.get_screen("AdminDash").ids.nav_drawer.status = 'closed'
 
 <CadetDash>:
     name: "CadetDash"
 
 
-<ApplicationWindow>:
-    name: "ApplicationWindow"
+<ApplyCadetScreen>:
+    name: "ApplyCadetScreen"
 
     MDBoxLayout:
         size_hint_y: None
-        height: root.height - dp(60)
+        height: root.height - sp(60)
 
         ScrollView:
             MDList:
@@ -227,15 +231,16 @@ WindowManager:
                     id: application_form
                     cols: 2
                     size_hint: None, None
-                    size: ((root.width - dp(30)),self.minimum_height)
+                    size: ((root.width - sp(30)),self.minimum_height)
                     pos_hint_y: 1
                     spacing: 30
                     padding: 18
+
                 MDGridLayout:
                     cols: 2
                     rows: 1
                     size_hint: None, None
-                    size: ((root.width - dp(30)),self.minimum_height)
+                    size: ((root.width - sp(30)),self.minimum_height)
                     padding: 150, 20, 150, 20
                     spacing : 30
                     MDRectangleFlatButton:
@@ -250,7 +255,7 @@ WindowManager:
                     orientation: "vertical"
                     MDToolbar:
                         title: "RC BNCC"
-                        elevation: "8sp"
+                        elevation: sp(8)
 
                         Image:
                             source: "Bncc_logo.png"
@@ -276,6 +281,7 @@ WindowManager:
     name: "SettingsScreen"
 
     MDBoxLayout:
+
         ScrollView:
             MDList:
 
@@ -294,3 +300,136 @@ WindowManager:
                         right_action_items: [["theme-light-dark"]]
                         theme_text_color: "Custom"
                         md_bg_color: [1,0,0,0]
+
+<ApplicationFormWindow>:
+    name: "ApplicationFormWindow"
+
+    MDBoxLayout:
+
+        pos_hint: {'center_x':0.48}
+        orientation: 'vertical'
+        padding: 50
+
+        ScrollView:
+            size_hint_y : 0.9
+
+            MDList:
+                MDGridLayout:
+                    id: edit_application_form
+                    cols: 1
+                    size_hint: None, None
+                    size: ((root.width - sp(30)),self.minimum_height)
+                    pos_hint_y: 1
+                    spacing: 60
+                    padding: 18
+
+        MDGridLayout:
+            cols: 2
+            rows: 1
+            size_hint_y : 0.1
+            padding: 10,10
+            spacing : 30
+            MDRectangleFlatButton:
+
+                text: "Add or Edit Items"
+                on_release:
+                    root.manager.current = 'EditFormWindow'
+
+            MDRectangleFlatButton:
+                text: "Remove Items"
+                        #on_release:
+
+<EditFormWindow>:
+    name: "EditFormWindow"
+
+    MDBoxLayout:
+        size_hint_y: None
+        height: root.height - sp(200)
+        orientation: "vertical"
+
+        GridLayout:
+            size_hint: None, None
+            size: ((root.width - sp(30)),self.minimum_height)
+            cols: 2
+            rows: 3
+            padding: 15
+            spacing : 40
+            pos_hint: {'center_y': 0.8}
+
+            MDLabel:
+                id: item_name_label
+                text: 'Item Name : '
+                size_hint_x: None
+                width: sp(100)
+
+            MDTextField:
+                id: item_name_input
+                hint_text: 'type item name...'
+                size_hint_x: None
+                width: sp(100)
+
+            MDLabel:
+                id: item_place_label
+                text: 'Place at : '
+                size_hint_x: 0.5
+
+            MDDropDownItem:
+                id: drop_item
+                text: "At Top"
+                size_hint_x: 0.5
+                on_release:
+                    root.dropdown_()
+
+            MDRaisedButton:
+                id: add_or_edit_btn
+                text: "ADD ITEM TO FORM"
+                on_release:
+                    if add_toggle_btn.state == "down" or edit_toggle_btn.state == "down": \
+                    root.add_item() if add_toggle_btn.state == "down" else root.edit_item();
+                    else: \
+                    print("please select a mode");
+
+        Widget:
+
+    MDNavigationLayout:
+        ScreenManager:
+            Screen:
+                BoxLayout:
+                    orientation: "vertical"
+                    MDToolbar:
+                        title: "RC BNCC"
+                        elevation: sp(8)
+
+                        Image:
+                            source: "Bncc_logo.png"
+                            pos: (((self.parent.size[0])/1.5)-20,self.pos[1])
+                    Widget:
+
+    GridLayout:
+
+        cols: 2
+        rows: 1
+        size_hint: None, 0.1
+        width: sp(250)
+        pos_hint:{'center_x':0.5,'center_y':0.8}
+        spacing: 50
+        background_normal: ' '
+
+        ToggleButton:
+            id: add_toggle_btn
+            text: "ADD ITEMS"
+	        background_normal: ''
+	        background_color: utils.get_color_from_hex("##6ab83a")
+	        disabled: True if edit_toggle_btn.state == 'down' else False
+	        on_release:
+	            root.change_texts()
+
+
+        ToggleButton:
+            id: edit_toggle_btn
+            text: "EDIT ITEMS"
+	        background_normal: ''
+	        background_color: utils.get_color_from_hex("##6ab83a")
+	        disabled: True if add_toggle_btn.state == 'down' else False
+            on_release:
+                root.change_texts()
