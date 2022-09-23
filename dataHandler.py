@@ -23,17 +23,6 @@ def update_app_data(table_name, column_name, new_data):
         db.commit()
 
     db.close()
-#
-#
-# form_items = ["Saad : ",
-#               "Name : ",
-#               "Father's Name : ",
-#               "Mother's Name : ",
-#               "Permanent Address : ",
-#               "Height : ",
-#               "Width : ",
-#               "Any Genetic Disorder : "]
-# update_app_data("dynamic_app_data", "application_form", repr(form_items))
 
 
 def query_app_data(table_name):

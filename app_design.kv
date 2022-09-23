@@ -1,7 +1,7 @@
 WindowManager:
     LoginScreen:
     ApplicationFormWindow:
-    EditFormWindow:
+    EditFormItemWindow:
     AdminDash:
     ApplyCadetScreen:
     AdminProfile:
@@ -125,7 +125,7 @@ WindowManager:
         padding: 20
         pos: (root.width//2 - (self.width//2 - sp(60)), root.height//2 - self.height+sp(90))
         MDRaisedButton:
-            text: "Cadet Applications"
+            text: "Applicants Information"
             md_bg_color: utils.get_color_from_hex("#3067ddff")
             on_release:
 
@@ -247,6 +247,9 @@ WindowManager:
                         text: "Apply"
                     MDRectangleFlatButton:
                         text: "Go Back"
+                        on_release:
+                            root.manager.current = "LoginScreen"
+                            application_form.clear_widgets()
 
     MDNavigationLayout:
         ScreenManager:
@@ -329,18 +332,26 @@ WindowManager:
             size_hint_y : 0.1
             padding: 10,10
             spacing : 30
-            MDRectangleFlatButton:
 
+            MDRectangleFlatButton:
                 text: "Add or Edit Items"
                 on_release:
-                    root.manager.current = 'EditFormWindow'
+                    print(root.manager.get_screen("EditFormItemWindow").form_items_names)
+                    root.manager.get_screen("EditFormItemWindow").ids.drop_item.text = root.manager.get_screen("EditFormItemWindow").form_items_names[0]
+                    root.manager.current = 'EditFormItemWindow'
 
             MDRectangleFlatButton:
                 text: "Remove Items"
-                        #on_release:
+                on_release:
+                    root.manager.get_screen('EditFormItemWindow').ids.add_toggle_btn.disabled = True
+                    root.manager.get_screen('EditFormItemWindow').ids.edit_toggle_btn.disabled = True
+                    root.manager.get_screen('EditFormItemWindow').ids.item_place_label.text = 'Select Item'
+                    root.manager.get_screen('EditFormItemWindow').ids.item_name_input.disabled = True
+                    root.manager.get_screen('EditFormItemWindow').ids.add_or_edit_btn.text = "Remove Item"
+                    root.manager.current = 'EditFormItemWindow'
 
-<EditFormWindow>:
-    name: "EditFormWindow"
+<EditFormItemWindow>:
+    name: "EditFormItemWindow"
 
     MDBoxLayout:
         size_hint_y: None
@@ -375,19 +386,16 @@ WindowManager:
 
             MDDropDownItem:
                 id: drop_item
-                text: "At Top"
+                #text: root.form_items_names[0]
                 size_hint_x: 0.5
                 on_release:
-                    root.dropdown_()
+                    root.item_dropdown_()
 
             MDRaisedButton:
                 id: add_or_edit_btn
-                text: "ADD ITEM TO FORM"
+                text: "Edit Item" if edit_toggle_btn.state == 'down' else "Add Item To Form"
                 on_release:
-                    if add_toggle_btn.state == "down" or edit_toggle_btn.state == "down": \
-                    root.add_item() if add_toggle_btn.state == "down" else root.edit_item();
-                    else: \
-                    print("please select a mode");
+                    root.do_stuffs()
 
         Widget:
 
@@ -433,3 +441,4 @@ WindowManager:
 	        disabled: True if add_toggle_btn.state == 'down' else False
             on_release:
                 root.change_texts()
+

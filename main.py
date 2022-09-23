@@ -1,14 +1,9 @@
-from kivy.properties import ObjectProperty
-from kivy.uix.scrollview import ScrollView
 from kivymd.app import MDApp
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.lang import Builder
-from kivymd.uix.boxlayout import MDBoxLayout
-from kivymd.uix.button import MDFlatButton, MDRectangleFlatButton
+from kivymd.uix.button import MDFlatButton
 from kivymd.uix.dialog import MDDialog
-from kivymd.uix.gridlayout import MDGridLayout
 from kivymd.uix.label import MDLabel
-from kivymd.uix.list import OneLineListItem, MDList
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.textfield import MDTextField
 from kivy.metrics import sp
@@ -21,7 +16,7 @@ Window.size = (300, 500)
 dataHandler.create_app_data()  # create static (on device memory) and dynamic (online ) app data
 
 under_login_screen = ["AdminDash", "CadetDash", "ApplyCadetScreen"]
-under_admin_dash = ["ApplicationFormWindow", "CadetsInfoScreen", "AdminProfile", "EditFormWindow"]
+under_admin_dash = ["ApplicationFormWindow", "CadetsInfoScreen", "AdminProfile"]
 under_cadet_dash = []
 common_screens = ["NoticeScreen", "AboutScreen", "SettingsScreen"]
 
@@ -47,7 +42,7 @@ class LoginScreen(Screen):
             elif self.manager.current in under_login_screen:
 
                 if self.manager.current == "ApplyCadetScreen":
-                    self.open_dialog('All input info will be empty if you go back!\n  Are you sure?')
+                    self.open_dialog('All credentials will be lost!\n  Are you sure?')
 
                 else:
                     self.open_dialog('Are you sure you want to go back?\n  You will be logged out!')
@@ -66,6 +61,10 @@ class LoginScreen(Screen):
 
         elif self.manager.current in under_login_screen:
             self.dialog.dismiss()
+
+            if self.manager.current == "ApplyCadetScreen":  # clear form widgets otherwise it will keep multiplying!!!
+                self.manager.get_screen("ApplyCadetScreen").ids.application_form.clear_widgets()
+
             self.manager.current = "LoginScreen"
             self.manager.transition.direction = 'right'
 
@@ -105,6 +104,9 @@ class LoginScreen(Screen):
                 self.manager.current = "AdminDash"
             else:
                 self.manager.current = "CadetDash"
+        elif self.manager.current == "EditFormItemWindow":
+            self.manager.get_screen("ApplicationFormWindow").show_form()
+            self.manager.current = "ApplicationFormWindow"
 
         self.manager.transition.direction = 'right'
 
@@ -151,16 +153,32 @@ class ApplicationFormWindow(Screen):
             self.ids.edit_application_form.add_widget(label)
 
 
-class EditFormWindow(Screen):
+class EditFormItemWindow(Screen):
 
     def __init__(self, **kwargs):
-        super(EditFormWindow, self).__init__(**kwargs)
-        self.form_items_names = []
+        super(EditFormItemWindow, self).__init__(**kwargs)
+        Window.bind(on_keyboard=self._key_handler)  # bind screen with keyboard or touch input
+        self.item_dropdown_menu = MDDropdownMenu()
 
+        self.form_items_names = []  # <== contains only the form item names without ':'
         for v in eval(dataHandler.query_app_data("dynamic_app_data")[0]):
             self.form_items_names.append(' '.join([i for i in v.split(" ") if i != ':']))
 
-    def change_texts(self):
+    # handles keyboard/ touch input!
+    def _key_handler(self, instance, key, *args):
+
+        if key == 27:
+            self.ids.add_toggle_btn.disabled = False
+            self.ids.add_toggle_btn.state = 'normal'
+            self.ids.edit_toggle_btn.disabled = False
+            self.ids.edit_toggle_btn.state = 'normal'
+            self.ids.item_name_input.disabled = False
+            self.ids.item_place_label.text = 'Place at : '
+            self.ids.drop_item.text = "At Top"
+            self.ids.add_or_edit_btn.text = "Add Item To Form"
+            self.item_dropdown_menu.dismiss()
+
+    def change_texts(self):  # changes the label and textfield texts according to add/edit button!
 
         if self.ids.add_toggle_btn.state == 'down':
 
@@ -176,61 +194,89 @@ class EditFormWindow(Screen):
             self.ids.item_place_label.text = 'Choose Item To Edit : '
             self.ids.drop_item.text = self.form_items_names[0]
 
-    def dropdown_(self):
-        form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0])
-        form_items.pop()
-        form_items.insert(0, 'At Top')
-        form_items.append('At Bottom')
-        item_list = []
-        for v in form_items:
-            if form_items.index(v) != 0 and form_items.index(v) != (len(form_items) - 1):
-                if self.ids.add_toggle_btn.state == 'down':
-                    item_list.append('After ' + ' '.join([i for i in v.split(" ") if i != ':']))
-                elif self.ids.edit_toggle_btn.state == 'down':
-                    item_list.append(' '.join([i for i in v.split(" ") if i != ':']))
-            else:
-                item_list.append(' '.join([i for i in v.split(" ") if i != ':']))
+    def item_dropdown_(self):  # dropdown menu for form items to select!
 
-        self.menu_list = [
+        form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0])
+
+        if self.ids.add_toggle_btn.state == 'down':
+            form_items.pop()
+            form_items.insert(0, 'At Top')
+            form_items.append('At Bottom')
+
+        item_dropdown_list = []
+
+        for v in form_items:  # looping through the items to add AFTER before every item name!
+
+            # if user is adding items
+            if self.ids.add_toggle_btn.state == 'down':
+
+                # if form item is not the first or last item in the list! (first: at top, last: at bottom)
+                if form_items.index(v) != 0 and form_items.index(v) != (len(form_items) - 1):
+                    item_dropdown_list.append('After ' + ' '.join([i for i in v.split(" ") if i != ':']))
+                else:
+                    item_dropdown_list.append(' '.join([i for i in v.split(" ") if i != ':']))
+
+            # if user is editing or removing items or doing nothing
+            else:
+                # elif self.ids.edit_toggle_btn.state == 'down':
+                item_dropdown_list.append(' '.join([i for i in v.split(" ") if i != ':']))
+
+            # elif self.ids.edit_toggle_btn.disabled and self.ids.add_toggle_btn.disabled:
+            #     item_dropdown_list.append(' '.join([i for i in v.split(" ") if i != ':']))
+
+        item_dropdown_list = [
             {
                 "viewclass": "OneLineListItem",
                 "text": v,
                 "height": sp(40),
                 "on_release": lambda x=v: self.selected_item(x)
-            } for v in item_list
-        ]
-        self.menu = MDDropdownMenu(
+            } for v in item_dropdown_list
+        ]  # this is just a linked list! like : [v for v in list]
+
+        self.item_dropdown_menu = MDDropdownMenu(
             caller=self.ids.drop_item,
-            items=self.menu_list,
+            items=item_dropdown_list,
             position="auto",
             width_mult=6
         )
-        self.menu.open()
+        self.item_dropdown_menu.open()
 
-    def selected_item(self, item):
-        self.ids.drop_item.text = item
+    def selected_item(self, item_name):
+        self.ids.drop_item.text = item_name
 
-    def add_item(self):
+    def add_item(self):  # add form item to database
+
         form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0])
         input_text = self.ids.item_name_input.text.split(" ")
+
+        # bottom lines format item input text to capitalize first letter of every word and stores in item_name variable!
         item_name = ' '.join(list(map(lambda x: x.lower().capitalize(), input_text)))
-        if not self.empty_textField(item_name):
-            if (item_name + ' : ') not in form_items:
+
+        if not self.empty_textField(item_name):  # if textfield is not empty!
+
+            if (item_name + ' : ') not in form_items:  # if item is not already in the application form
+
                 if self.ids.drop_item.text == "At Top":
-                    form_items.insert(0, item_name + ' : ')
+                    form_items.insert(0, item_name + ' : ')  # inserts new item at index 0
+
                 elif self.ids.drop_item.text == "At Bottom":
-                    form_items.append(item_name + ' : ')
+                    form_items.append(item_name + ' : ')  # inserts new item at the last index
+
                 else:
                     place_item = ' '.join([v for v in self.ids.drop_item.text.split(" ") if v != "After"])
                     index_ = form_items.index(place_item + ': ') + 1
-                    form_items.insert(index_, f'{item_name} : ')
+                    form_items.insert(index_,
+                                      f'{item_name} : ')  # inserts new item after the selected dropdown item
+
                 dataHandler.update_app_data("dynamic_app_data", "application_form", repr(form_items))
 
-                self.form_items_names.clear()
-                for v in eval(dataHandler.query_app_data("dynamic_app_data")[0]):
-                    self.form_items_names.append(' '.join([i for i in v.split(" ") if i != ':']))
                 self.ids.item_name_input.text = ''
                 self.ids.drop_item.text = 'At Top'
+
+                # this following code clears the self.form_items_name list to update with the newly added item in form
+                self.form_items_names.clear()
+                for v in eval(dataHandler.query_app_data("dynamic_app_data")[0]):  # looping though new dynamic_app_data
+                    self.form_items_names.append(' '.join([i for i in v.split(" ") if i != ':']))
 
             else:
                 print('item already in the form!')
@@ -238,23 +284,51 @@ class EditFormWindow(Screen):
             print("type a valid item name please!")
 
     def edit_item(self):
-        if not self.empty_textField(self.ids.item_name_input.text):
-            for v in self.form_items_names:
-                if self.ids.drop_item.text == v:
-                    index = self.form_items_names.index(v)
-                    self.form_items_names.insert(index, self.ids.item_name_input.text)
-                    self.form_items_names.remove(self.form_items_names[index + 1])
-            new_form_items = [f'{v} : ' for v in self.form_items_names]
-            dataHandler.update_app_data("dynamic_app_data", "application_form", repr(new_form_items))
+
+        if not self.empty_textField(self.ids.item_name_input.text):  # if textfield is not empty!
+
+            # this following code formats the textfield input to Capitalize every first word
+            input_text = self.ids.item_name_input.text.split(" ")
+            item_new_name = ' '.join(list(map(lambda x: x.lower().capitalize(), input_text)))
+
+            if self.ids.drop_item.text in self.form_items_names:  # proceed if what user trying to edit is in the list
+                index = self.form_items_names.index(
+                    self.ids.drop_item.text)  # index of the item user is trying to edit
+                self.form_items_names.insert(index,
+                                             item_new_name)  # insert new edited name of item in that index
+                self.form_items_names.remove(
+                    self.form_items_names[index + 1])  # remove prev item that's been edited
+
+                new_form_items = [f'{v} : ' for v in
+                                  self.form_items_names]  # looping through list to format with a ':'
+                dataHandler.update_app_data("dynamic_app_data", "application_form", repr(new_form_items))
+
+                self.ids.item_name_input.text = ''
+
+            else:
+                print("item you are trying to edit not in the list!")
+
         else:
             print("enter a valid name!")
 
-    def empty_textField(self, textField_text):
+    def empty_textField(self, textField_text):  # if user did not put anything in textfield it returns True
 
-        textField = textField_text.split(' ')
-
-        if not ''.join(textField).isalpha():
+        if textField_text == '' or textField_text.isspace():
             return True
+
+    def remove_item(self):
+
+        print(self.ids.drop_item.text)
+
+    def do_stuffs(self):
+
+        if self.ids.add_toggle_btn.disabled and self.ids.edit_toggle_btn.disabled:
+            self.remove_item()
+        else:
+            if self.ids.add_toggle_btn.state == 'down':
+                self.add_item()
+            elif self.ids.edit_toggle_btn.state == 'down':
+                self.edit_item()
 
 
 class AdminProfile(Screen):
