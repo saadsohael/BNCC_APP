@@ -1,21 +1,29 @@
+import io
+
 from kivymd.app import MDApp
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.lang import Builder
-from kivymd.uix.button import MDFlatButton
+from kivymd.toast import toast
+from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.label import MDLabel
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.textfield import MDTextField
 from kivy.metrics import sp
-
+import admin
 import dataHandler
+import mail_handler
+from kivy.animation import Animation
+from kivy.properties import NumericProperty
+from kivy.uix.image import Image, CoreImage
+
 from kivy.core.window import Window
 
 Window.size = (300, 500)
 
 dataHandler.create_app_data()  # create static (on device memory) and dynamic (online ) app data
 
-under_login_screen = ["AdminDash", "CadetDash", "ApplyCadetScreen"]
+under_login_screen = ["AdminDash", "CadetDash", "ApplyCadetScreen", "PasswordRecoveryWindow"]
 under_admin_dash = ["ApplicationFormWindow", "CadetsInfoScreen", "AdminProfile"]
 under_cadet_dash = []
 common_screens = ["NoticeScreen", "AboutScreen", "SettingsScreen"]
@@ -39,7 +47,7 @@ class LoginScreen(Screen):
             if self.manager.current == "LoginScreen":
                 self.open_dialog('Are you sure you want to exit?')
 
-            elif self.manager.current in under_login_screen:
+            elif self.manager.current in under_login_screen and self.manager.current != "PasswordRecoveryWindow":
 
                 if self.manager.current == "ApplyCadetScreen":
                     self.open_dialog('All credentials will be lost!\n  Are you sure?')
@@ -83,19 +91,32 @@ class LoginScreen(Screen):
 
     def log_in_btn(self):
 
-        # if self.ids.login_label.text == "Admin Login":
-        #     if dataHandler.is_admin(self.ids.username_textfield.text, self.ids.password_textfield.text):
-        #         self.manager.current = "AdminDash"
-        #         self.ids.username_textfield.text = ''
-        #         self.ids.password_textfield.text = ''
         if self.ids.login_label.text == "Admin Login":
             self.manager.current = "AdminDash"
+            # if dataHandler.is_admin(self.ids.username_textfield.text, self.ids.password_textfield.text):
+            #     self.manager.current = "AdminDash"
+            #     self.ids.username_textfield.text = ''
+            #     self.ids.password_textfield.text = ''
+            # else:
+            #     self.show_wrong_credentials("Wrong Username or Password!")
         self.manager.get_screen("AdminDash").ids.nav_drawer.set_state("close")
+
+    def show_wrong_credentials(self, text):
+        self.dialog_box = MDDialog(title=text,
+                                   size_hint=(None, None),
+                                   width=(self.width - sp(50)),
+                                   buttons=[MDFlatButton(text='Dismiss', on_release=self.DISMISS_DIALOG_BOX)])
+        self.dialog_box.open()
+
+    def DISMISS_DIALOG_BOX(self, instance):
+        self.dialog_box.dismiss()
 
     def go_back(self):
 
         # fetch previous_screens
-        if self.manager.current in under_admin_dash:
+        if self.manager.current in under_login_screen:
+            self.manager.current = "LoginScreen"
+        elif self.manager.current in under_admin_dash:
             self.manager.current = "AdminDash"
         elif self.manager.current in under_cadet_dash:
             self.manager.current = "CadetDash"
@@ -109,6 +130,107 @@ class LoginScreen(Screen):
             self.manager.current = "ApplicationFormWindow"
 
         self.manager.transition.direction = 'right'
+
+
+class PasswordRecoveryWindow(Screen):
+
+    def send_otp(self):
+
+        if self.manager.get_screen("LoginScreen").ids.login_label.text == "Cadet Login":
+            pass
+
+        elif self.manager.get_screen("LoginScreen").ids.login_label.text == "Admin Login":
+
+            if self.ids.mail_address.text == dataHandler.query_admin('admin_email'):
+
+                # if mail_handler.send_pass_recovery_otp(self.ids.mail_address.text) is not None:
+                if mail_handler.has_internet():
+                    # mail_handler.send_pass_recovery_otp(self.ids.mail_address.text)
+                    mail_handler.SendEmail(self.ids.mail_address.text)
+                    self.open_dialog("OTP has been sent to your email account\nCheck Spam if you can't see..\n"
+                                     "Or try again after 2 minutes.")
+                    self.ids.send_otp_btn.disabled = True
+                    self.start_countdown()
+
+                    otp_label = MDLabel(text='type otp : ')
+                    self.otp_textfield = MDTextField(hint_text='enter otp here...')
+                    confirm_otp_btn = MDRaisedButton(text="Confirm OTP")
+                    confirm_otp_btn.bind(on_release=self.confirm_otp)
+                    blank_space_ = MDLabel(text='')
+
+                    self.ids.reset_items.clear_widgets()
+                    self.ids.reset_items.add_widget(otp_label)
+                    self.ids.reset_items.add_widget(self.otp_textfield)
+                    self.ids.reset_items.add_widget(confirm_otp_btn)
+                    self.ids.reset_items.add_widget(blank_space_)
+
+                else:
+                    toast("Could not connect to the internet!")
+            else:
+                toast("Wrong Email Address!")
+
+    def open_dialog(self, title):  # opens dialog box to confirm action
+
+        self.dialog = MDDialog(title=title,
+                               size_hint=(None, None),
+                               width=(self.width - sp(50)),
+                               buttons=[MDFlatButton(text='Dismiss', on_release=self.close_dialog)])
+        self.dialog.open()
+
+    def close_dialog(self, instance):
+        self.dialog.dismiss()
+
+    def confirm_otp(self, instance):  # when confirm otp button is pressed!
+
+        if dataHandler.query_admin('otp') == self.otp_textfield.text:
+
+            new_pass_label = MDLabel(text='Type new password : ')
+            self.new_pass_textfield = MDTextField(hint_text='enter new pass...')
+            confirm_pass_btn = MDRaisedButton(text="Confirm Password")
+            confirm_pass_btn.bind(on_release=self.confirm_pass)
+            blank_space_ = MDLabel(text='')
+            dataHandler.drop_column('admin_data', 'otp')
+
+            self.ids.reset_items.clear_widgets()
+            self.ids.reset_items.add_widget(new_pass_label)
+            self.ids.reset_items.add_widget(self.new_pass_textfield)
+            self.ids.reset_items.add_widget(confirm_pass_btn)
+            self.ids.reset_items.add_widget(blank_space_)
+
+        else:
+            toast("Wrong OTP!")
+
+    def confirm_pass(self, instance):  # when the change password button is pressed!
+
+        admin.update_password(self.new_pass_textfield.text)  # update password on server
+
+        self.manager.current = "LoginScreen"
+        toast("Your password has been changed!")
+        self.ids.mail_address.text = ''
+        self.ids.reset_items.clear_widgets()  # clear new password input textfield!
+
+    # this codes below generates and shows timer on app screen
+
+    countdown_seconds = 120
+    a = NumericProperty(countdown_seconds)  # because we want 120 seconds to pass before requesting another otp
+
+    def start_countdown(self):
+        Animation.cancel_all(self)  # stop any current animations
+        self.anim = Animation(a=0, duration=self.a)
+
+        def finish_callback(animation, incr_crude_clock):
+            incr_crude_clock.text = ''
+            self.ids.send_otp_btn.disabled = False
+            self.a = 5
+
+        self.anim.bind(on_complete=finish_callback)
+        self.anim.start(self)
+
+    def on_a(self, instance, value):
+        if self.ids.send_otp_btn.disabled:
+            self.ids.countdown.text = f'seconds left : {str(int(value))}'
+        else:
+            self.ids.countdown.text = ''
 
 
 class ApplyCadetScreen(Screen):
@@ -148,7 +270,7 @@ class ApplicationFormWindow(Screen):
     def show_form(self):
         form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0])
         for v in form_items:
-            text = ' '.join([i for i in v.split(" ") if i != ':'])
+            text = ''.join(v.split(":")).rstrip()
             label = MDLabel(text=text, size_hint_x=0.55, halign="center", valign='middle')
             self.ids.edit_application_form.add_widget(label)
 
@@ -162,7 +284,8 @@ class EditFormItemWindow(Screen):
 
         self.form_items_names = []  # <== contains only the form item names without ':'
         for v in eval(dataHandler.query_app_data("dynamic_app_data")[0]):
-            self.form_items_names.append(' '.join([i for i in v.split(" ") if i != ':']))
+            # self.form_items_names.append(' '.join([i for i in v.split(" ") if i != ':']))
+            self.form_items_names.append(''.join(v.split(":")).rstrip())
 
     # handles keyboard/ touch input!
     def _key_handler(self, instance, key, *args):
@@ -174,7 +297,7 @@ class EditFormItemWindow(Screen):
             self.ids.edit_toggle_btn.state = 'normal'
             self.ids.item_name_input.disabled = False
             self.ids.item_place_label.text = 'Place at : '
-            self.ids.drop_item.text = "At Top"
+            self.ids.drop_item.text = self.form_items_names[0]
             self.ids.add_or_edit_btn.text = "Add Item To Form"
             self.item_dropdown_menu.dismiss()
 
@@ -212,18 +335,17 @@ class EditFormItemWindow(Screen):
 
                 # if form item is not the first or last item in the list! (first: at top, last: at bottom)
                 if form_items.index(v) != 0 and form_items.index(v) != (len(form_items) - 1):
-                    item_dropdown_list.append('After ' + ' '.join([i for i in v.split(" ") if i != ':']))
+                    item_dropdown_list.append('After ' + ''.join(v.split(":")).rstrip())
                 else:
-                    item_dropdown_list.append(' '.join([i for i in v.split(" ") if i != ':']))
+                    item_dropdown_list.append(''.join(v.split(":")).rstrip())
 
             # if user is editing or removing items or doing nothing
             else:
                 # elif self.ids.edit_toggle_btn.state == 'down':
-                item_dropdown_list.append(' '.join([i for i in v.split(" ") if i != ':']))
+                item_dropdown_list.append(''.join(v.split(":")).rstrip())
 
             # elif self.ids.edit_toggle_btn.disabled and self.ids.add_toggle_btn.disabled:
             #     item_dropdown_list.append(' '.join([i for i in v.split(" ") if i != ':']))
-
         item_dropdown_list = [
             {
                 "viewclass": "OneLineListItem",
@@ -243,6 +365,7 @@ class EditFormItemWindow(Screen):
 
     def selected_item(self, item_name):
         self.ids.drop_item.text = item_name
+        self.item_dropdown_menu.dismiss()
 
     def add_item(self):  # add form item to database
 
@@ -264,11 +387,12 @@ class EditFormItemWindow(Screen):
 
                 else:
                     place_item = ' '.join([v for v in self.ids.drop_item.text.split(" ") if v != "After"])
-                    index_ = form_items.index(place_item + ': ') + 1
+                    index_ = form_items.index(place_item + ' : ') + 1
                     form_items.insert(index_,
                                       f'{item_name} : ')  # inserts new item after the selected dropdown item
 
                 dataHandler.update_app_data("dynamic_app_data", "application_form", repr(form_items))
+                toast("Item Successfully Added To Application Form!")
 
                 self.ids.item_name_input.text = ''
                 self.ids.drop_item.text = 'At Top'
@@ -276,7 +400,7 @@ class EditFormItemWindow(Screen):
                 # this following code clears the self.form_items_name list to update with the newly added item in form
                 self.form_items_names.clear()
                 for v in eval(dataHandler.query_app_data("dynamic_app_data")[0]):  # looping though new dynamic_app_data
-                    self.form_items_names.append(' '.join([i for i in v.split(" ") if i != ':']))
+                    self.form_items_names.append(''.join(v.split(":")).rstrip())
 
             else:
                 print('item already in the form!')
@@ -303,6 +427,8 @@ class EditFormItemWindow(Screen):
                                   self.form_items_names]  # looping through list to format with a ':'
                 dataHandler.update_app_data("dynamic_app_data", "application_form", repr(new_form_items))
 
+                toast("Item Name Updated!")
+
                 self.ids.item_name_input.text = ''
 
             else:
@@ -316,23 +442,50 @@ class EditFormItemWindow(Screen):
         if textField_text == '' or textField_text.isspace():
             return True
 
-    def remove_item(self):
+    def remove_confirmation(self):
 
-        print(self.ids.drop_item.text)
+        self.dialog = MDDialog(title="Are You Sure You Want To Remove"
+                                     f"\n{self.ids.drop_item.text} from Application Form?",
+                               size_hint=(None, None),
+                               width=(self.width - sp(50)),
+                               buttons=[MDFlatButton(text='Yes', on_release=self.remove_item),
+                                        MDFlatButton(text='No', on_release=self.close_dialog)]
+                               )
+        self.dialog.open()
+
+    def remove_item(self, instance):
+
+        self.form_items_names.remove(self.ids.drop_item.text)
+        updated_form_items_list = [f'{v} : ' for v in self.form_items_names]
+        dataHandler.update_app_data("dynamic_app_data", "application_form", repr(updated_form_items_list))
+        self.ids.drop_item.text = self.form_items_names[0]
+        self.dialog.dismiss()
 
     def do_stuffs(self):
 
         if self.ids.add_toggle_btn.disabled and self.ids.edit_toggle_btn.disabled:
-            self.remove_item()
+            self.remove_confirmation()
         else:
             if self.ids.add_toggle_btn.state == 'down':
                 self.add_item()
             elif self.ids.edit_toggle_btn.state == 'down':
                 self.edit_item()
 
+    def close_dialog(self, instance):
+        self.dialog.dismiss()
+
 
 class AdminProfile(Screen):
-    pass
+
+    def show_admin(self):
+
+        image = dataHandler.query_admin('profile_photo')
+        data = io.BytesIO(image)
+        img = CoreImage(data, ext="png").texture
+        self.ids.admin_profile_photo.source = 'a.jpg'
+        self.ids.admin_profile_photo.texture = img
+
+        # self.ids.
 
 
 class CadetsInfoScreen(Screen):

@@ -119,5 +119,42 @@ def is_admin(admin_username, admin_password):
     if admin_username == username or admin_username == adm_email:
         if hashed_pass == passwd:
             return True
+        else:
+            return False
     else:
         return False
+
+
+def query_admin(query):
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        passwd="saad1122002",
+        database="first_db"
+    )
+
+    cursor = db.cursor()
+    cursor.execute(f"SELECT {query} FROM first_db.admin_data")
+    data = None
+    for v in cursor:
+        data = v[0]
+    db.close()
+    return data
+
+
+def drop_column(table_name, col_name):
+    if table_name == 'static_app_data':
+        db = sqlite3.connect("app_data.db")
+
+    else:
+        db = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            passwd="saad1122002",
+            database="first_db"
+        )
+
+    cursor = db.cursor()
+    cursor.execute(f"ALTER TABLE {table_name} DROP COLUMN {col_name}")
+    db.commit()
+

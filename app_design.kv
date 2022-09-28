@@ -2,14 +2,15 @@ WindowManager:
     LoginScreen:
     ApplicationFormWindow:
     EditFormItemWindow:
-    AdminDash:
     ApplyCadetScreen:
+    AdminDash:
     AdminProfile:
     CadetsInfoScreen:
     CadetDash:
     NoticeScreen:
     AboutScreen:
     SettingsScreen:
+    PasswordRecoveryWindow:
 
 #: import utils kivy.utils
 
@@ -53,7 +54,7 @@ WindowManager:
             MDTextField:
                 id: username_textfield
                 hint_text: "Type Username or Email"
-                helper_text: "or click forgot account"
+                helper_text: "or click forget password"
                 helper_text_mode: "on_focus"
                 icon_right: "account"
                 icon_right_color: "white" if app.theme_cls.theme_style == "Dark" else "black"
@@ -62,7 +63,7 @@ WindowManager:
             MDTextField:
                 id: password_textfield
                 hint_text: "Type Password"
-                helper_text: "or click forgot account"
+                helper_text: "or click forget password"
                 helper_text_mode: "on_focus"
                 icon_right: "key"
                 icon_right_color: "white" if app.theme_cls.theme_style == "Dark" else "black"
@@ -80,7 +81,9 @@ WindowManager:
                         root.log_in_btn()
 
                 MDRectangleFlatButton:
-                    text: "Forgot Password"
+                    text: "Forget Password"
+                    on_release:
+                        root.manager.current = "PasswordRecoveryWindow"
 
     MDRaisedButton:
         id: change_user
@@ -185,6 +188,7 @@ WindowManager:
                     OneLineListItem:
                         text: "Profile"
                         on_release:
+                            root.manager.get_screen("AdminProfile").show_admin()
                             root.manager.current = "AdminProfile"
 
                     OneLineListItem:
@@ -268,6 +272,51 @@ WindowManager:
 <AdminProfile>:
     name: "AdminProfile"
 
+    MDBoxLayout:
+
+        pos_hint: {'center_x':0.48}
+        orientation: 'vertical'
+        padding: 50
+
+        MDGridLayout:
+            cols: 2
+
+            ScrollView:
+                size_hint : 0.6, None
+                height: root.height - sp(100)
+
+                MDList:
+                    id: admin_info
+
+            MDFloatLayout:
+                size_hint : 0.4, None
+                height: sp(150)
+                Image:
+                    id: admin_profile_photo
+                    source : ''
+                    pos: (root.width - (self.width+20), root.height - (self.height + 80))
+
+
+
+    MDNavigationLayout:
+        ScreenManager:
+            Screen:
+                BoxLayout:
+                    orientation: "vertical"
+                    MDToolbar:
+                        title: "RC BNCC"
+                        elevation: sp(8)
+                        left_action_items: [["menu", lambda x : nav_drawer.set_state("toggle")]]
+
+                        Image:
+                            source: "Bncc_logo.png"
+                            pos: (((self.parent.size[0])/1.5)-20,self.pos[1])
+
+
+                    Widget:
+
+
+
 <CadetsInfoScreen>:
     name: "CadetsInfoScreen"
 
@@ -336,7 +385,6 @@ WindowManager:
             MDRectangleFlatButton:
                 text: "Add or Edit Items"
                 on_release:
-                    print(root.manager.get_screen("EditFormItemWindow").form_items_names)
                     root.manager.get_screen("EditFormItemWindow").ids.drop_item.text = root.manager.get_screen("EditFormItemWindow").form_items_names[0]
                     root.manager.current = 'EditFormItemWindow'
 
@@ -386,7 +434,6 @@ WindowManager:
 
             MDDropDownItem:
                 id: drop_item
-                #text: root.form_items_names[0]
                 size_hint_x: 0.5
                 on_release:
                     root.item_dropdown_()
@@ -441,4 +488,50 @@ WindowManager:
 	        disabled: True if add_toggle_btn.state == 'down' else False
             on_release:
                 root.change_texts()
+
+<PasswordRecoveryWindow>:
+    name: "PasswordRecoveryWindow"
+
+    MDBoxLayout:
+        orientation: 'vertical'
+        pos_hint:{'center_y':0.45}
+
+        MDGridLayout:
+            cols: 1
+            rows: 2
+            padding: 15, 20
+
+            MDGridLayout:
+                id: recovery_items
+                cols: 2
+                rows: 2
+                spacing: 0,50
+
+                MDLabel:
+                    text: "Enter Registered Mail : "
+                    size_hint_x: None
+                    width: sp(140)
+
+                MDTextField:
+                    id: mail_address
+                    hint_text: "enter your email id..."
+                    mode: 'fill'
+
+                MDRaisedButton:
+                    id: send_otp_btn
+                    text: "Send OTP"
+                    on_release:
+                        root.send_otp()
+
+                MDLabel:
+                    id: countdown
+
+            MDGridLayout:
+
+                id: reset_items
+                cols: 2
+                rows: 4
+
+        Widget:
+
 
