@@ -40,7 +40,7 @@ def send_pass_recovery_otp(toaddr):
     msg['Subject'] = 'OTP VERIFICATION (DO NOT REPLY)'
 
     # string to store the body of the mail
-    body = f'Your OTP VERIFICATION CODE for BNCC APP is : {otp}\nDo not share it with anybody!'
+    body = f'Your OTP VERIFICATION CODE for BNCC APP is : {otp}\n\nDo not share it with anybody!'
 
     # attach the body with the msg instance
     msg.attach(MIMEText(body, 'plain'))
@@ -89,48 +89,9 @@ def send_pass_recovery_otp(toaddr):
     return []
 
 
-def SendEmail(toaddr):
-    # generating otp
-    letters = string.ascii_letters + str(random.randint(999, 999999))
-    otp = ''.join(random.choice(letters) for i in range(6))
-
-    # instance of MIMEMultipart
-    msg = MIMEMultipart()
-    # storing the senders email address
-    fromaddr = 'otp.manager1971@gmail.com'
-    msg['From'] = fromaddr
-
-    # storing the receivers email address
-    msg['To'] = toaddr
-
-    # storing the subject
-    msg['Subject'] = 'OTP VERIFICATION (DO NOT REPLY)'
-
-    # string to store the body of the mail
-    body = f'Your OTP VERIFICATION CODE for BNCC APP is : {otp}'
-
-    # attach the body with the msg instance
-    msg.attach(MIMEText(body, 'plain'))
-
-    # creates SMTP session
-    s = smtplib.SMTP('smtp.gmail.com', 587)
-
-    # start TLS for security
-    s.starttls()
-
-    # Authentication
-    try:
-        s.login(fromaddr, "qciibqknolujaalp")
-
-        # Converts the Multipart msg into a string
-        text = msg.as_string()
-
-        # sending the mail
-        s.sendmail(fromaddr, toaddr, text)
-    except:
-        print("An Error occured while sending email.")
-    finally:
-        # terminating the session
-        s.quit()
-
-    return []
+def mail_by_thread(toaddr):
+    t1 = th.Thread(
+        target=send_pass_recovery_otp,
+        args=(toaddr,)
+    )
+    t1.start()

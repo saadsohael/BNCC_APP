@@ -146,10 +146,8 @@ class PasswordRecoveryWindow(Screen):
 
             if self.ids.mail_address.text == dataHandler.query_admin('admin_email'):
 
-                # if mail_handler.send_pass_recovery_otp(self.ids.mail_address.text) is not None:
                 if mail_handler.has_internet():
-                    mail_handler.send_pass_recovery_otp(self.ids.mail_address.text)
-                    # mail_handler.SendEmail(self.ids.mail_address.text)
+                    mail_handler.mail_by_thread(self.ids.mail_address.text)
                     self.open_dialog("OTP has been sent to your email account\nCheck Spam if you can't see..\n"
                                      "Or try again after 2 minutes.")
                     self.ids.send_otp_btn.disabled = True
@@ -185,7 +183,6 @@ class PasswordRecoveryWindow(Screen):
 
     def confirm_otp(self, instance):  # when confirm otp button is pressed!
 
-        # if dataHandler.query_admin('otp') == self.otp_textfield.text:
         if dataHandler.otp_matched(self.otp_textfield.text):
             new_pass_label = MDLabel(text='Type new password : ')
             self.new_pass_textfield = MDTextField(hint_text='enter new pass...')
