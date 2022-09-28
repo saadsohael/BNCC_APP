@@ -1,5 +1,5 @@
 import io
-
+import webbrowser
 from kivymd.app import MDApp
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.lang import Builder
@@ -7,6 +7,7 @@ from kivymd.toast import toast
 from kivymd.uix.button import MDFlatButton, MDRaisedButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.label import MDLabel
+from kivymd.uix.list import TwoLineListItem
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.textfield import MDTextField
 from kivy.metrics import sp
@@ -15,14 +16,13 @@ import dataHandler
 import mail_handler
 from kivy.animation import Animation
 from kivy.properties import NumericProperty
-from kivy.uix.image import Image, CoreImage
-
+from kivy.uix.image import CoreImage
 from kivy.core.window import Window
 
 Window.size = (300, 500)
 
 dataHandler.create_app_data()  # create static (on device memory) and dynamic (online ) app data
-dataHandler.set_database()
+# dataHandler.set_database()
 
 under_login_screen = ["AdminDash", "CadetDash", "ApplyCadetScreen", "PasswordRecoveryWindow"]
 under_admin_dash = ["ApplicationFormWindow", "CadetsInfoScreen", "AdminProfile"]
@@ -136,8 +136,6 @@ class LoginScreen(Screen):
 class PasswordRecoveryWindow(Screen):
 
     def send_otp(self):
-
-        dataHandler.set_database()
 
         if self.manager.get_screen("LoginScreen").ids.login_label.text == "Cadet Login":
             pass
@@ -373,10 +371,9 @@ class EditFormItemWindow(Screen):
         input_text = self.ids.item_name_input.text.split(" ")
 
         # bottom lines format item input text to capitalize first letter of every word and stores in item_name variable!
-        item_name = ' '.join(list(map(lambda x: x.lower().capitalize(), input_text)))
+        item_name = ' '.join(list(map(lambda x: x.capitalize(), input_text)))
 
         if not self.empty_textField(item_name):  # if textfield is not empty!
-
             if (item_name + ' : ') not in form_items:  # if item is not already in the application form
 
                 if self.ids.drop_item.text == "At Top":
@@ -403,9 +400,9 @@ class EditFormItemWindow(Screen):
                     self.form_items_names.append(''.join(v.split(":")).rstrip())
 
             else:
-                print('item already in the form!')
+                toast(f'{item_name} is already in the form!')
         else:
-            print("type a valid item name please!")
+            toast("Enter a valid item name please!")
 
     def edit_item(self):
 
@@ -413,29 +410,33 @@ class EditFormItemWindow(Screen):
 
             # this following code formats the textfield input to Capitalize every first word
             input_text = self.ids.item_name_input.text.split(" ")
-            item_new_name = ' '.join(list(map(lambda x: x.lower().capitalize(), input_text)))
+            item_new_name = ' '.join(list(map(lambda x: x.capitalize(), input_text)))
 
-            if self.ids.drop_item.text in self.form_items_names:  # proceed if what user trying to edit is in the list
-                index = self.form_items_names.index(
-                    self.ids.drop_item.text)  # index of the item user is trying to edit
-                self.form_items_names.insert(index,
-                                             item_new_name)  # insert new edited name of item in that index
-                self.form_items_names.remove(
-                    self.form_items_names[index + 1])  # remove prev item that's been edited
+            if item_new_name not in self.form_items_names:
 
-                new_form_items = [f'{v} : ' for v in
-                                  self.form_items_names]  # looping through list to format with a ':'
-                dataHandler.update_app_data("dynamic_app_data", "application_form", repr(new_form_items))
+                if self.ids.drop_item.text in self.form_items_names:  # proceed if what user trying to edit is in the list
+                    index = self.form_items_names.index(
+                        self.ids.drop_item.text)  # index of the item user is trying to edit
+                    self.form_items_names.insert(index,
+                                                 item_new_name)  # insert new edited name of item in that index
+                    self.form_items_names.remove(
+                        self.form_items_names[index + 1])  # remove prev item that's been edited
 
-                toast("Item Name Updated!")
+                    new_form_items = [f'{v} : ' for v in
+                                      self.form_items_names]  # looping through list to format with a ':'
+                    dataHandler.update_app_data("dynamic_app_data", "application_form", repr(new_form_items))
 
-                self.ids.item_name_input.text = ''
+                    toast("Item Name Updated!")
 
+                    self.ids.item_name_input.text = ''
+
+                else:
+                    toast("item is not in the list!")
             else:
-                print("item you are trying to edit not in the list!")
+                toast(f'{item_new_name} is already in the list')
 
         else:
-            print("enter a valid name!")
+            toast("Enter a valid item name please!")
 
     def empty_textField(self, textField_text):  # if user did not put anything in textfield it returns True
 
@@ -458,6 +459,7 @@ class EditFormItemWindow(Screen):
         self.form_items_names.remove(self.ids.drop_item.text)
         updated_form_items_list = [f'{v} : ' for v in self.form_items_names]
         dataHandler.update_app_data("dynamic_app_data", "application_form", repr(updated_form_items_list))
+        toast(f"{self.ids.drop_item.text} removed from Application Form")
         self.ids.drop_item.text = self.form_items_names[0]
         self.dialog.dismiss()
 
@@ -478,13 +480,22 @@ class EditFormItemWindow(Screen):
 class AdminProfile(Screen):
 
     def show_admin(self):
+        admin_data = admin.fetch_admin_data()
         image = dataHandler.query_admin('profile_photo')
         data = io.BytesIO(image)
         img = CoreImage(data, ext="png").texture
         self.ids.admin_profile_photo.source = 'a.jpg'
         self.ids.admin_profile_photo.texture = img
 
-        # self.ids.
+        self.admin_name = admin_data[0]
+        self.admin_email = admin_data[1]
+
+        self.ids.admin_info.add_widget(
+            TwoLineListItem(text=f"Name", secondary_text=self.admin_name,
+                            on_press=lambda x: toast("Name : " + self.admin_name)))
+        self.ids.admin_info.add_widget(
+            TwoLineListItem(text=f"Mail", secondary_text=self.admin_email,
+                            on_press=lambda x: toast("Name : " + self.admin_email)))
 
 
 class CadetsInfoScreen(Screen):
@@ -500,7 +511,15 @@ class NoticeScreen(Screen):
 
 
 class AboutScreen(Screen):
-    pass
+    def open_web(self, webname):
+        if webname == 'gmail':
+            toast("Email : saad.raj.bd@gmail.com")
+        elif webname == 'facebook':
+            toast("Facebook : Saad Sohael")
+            webbrowser.open("https://www.facebook.com/isaadsohael")
+        elif webname == 'instagram':
+            toast("Instagram : isaadsohael")
+            webbrowser.open("https://www.instagram.com/isaadsohael")
 
 
 class SettingsScreen(Screen):
@@ -535,7 +554,7 @@ class MainApp(MDApp):
         kvFile = Builder.load_file("app_design.kv")
 
         return kvFile
-        # return ApplicationFormWindow()
+        # return AdminProfile()
 
     def update_theme(self):
         theme_color = dataHandler.query_app_data("static_app_data")[0]

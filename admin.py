@@ -61,6 +61,21 @@ def img_binary_data(path):
     return binary_data
 
 
+def fetch_admin_data():
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        passwd="saad1122002",
+        database="first_db"
+    )
+
+    c = db.cursor()
+
+    c.execute("SELECT * FROM admin_data")
+    for v in c:
+        return v
+
+
 def add_admin_to_database():
     username = input('username : ')
     email_add = input('email : ')

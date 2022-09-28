@@ -10,7 +10,7 @@ import threading as th
 
 
 def has_internet():
-    url = "http://www.gmail.com"
+    url = "https://mail.google.com/"
     timeout = 5
     try:
         request = requests.get(url, timeout=timeout)

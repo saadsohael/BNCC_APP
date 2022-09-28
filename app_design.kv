@@ -13,6 +13,7 @@ WindowManager:
     PasswordRecoveryWindow:
 
 #: import utils kivy.utils
+#: import toast kivymd.toast
 
 <LoginScreen>:
     name: "LoginScreen"
@@ -280,6 +281,7 @@ WindowManager:
 
         MDGridLayout:
             cols: 2
+            padding: sp(0),sp(50)
 
             ScrollView:
                 size_hint : 0.6, None
@@ -295,6 +297,10 @@ WindowManager:
                     id: admin_profile_photo
                     source : ''
                     pos: (root.width - (self.width+20), root.height - (self.height + 80))
+
+                #MDLabel:
+                    #text: 'asdf'
+                    #pos: admin_profile_photo.pos
 
 
 
@@ -325,9 +331,56 @@ WindowManager:
 
 <AboutScreen>:
     name: "AboutScreen"
-    MDLabel:
-        text: "Made by Saad Ibne Sohael"
-        pos_hint: {"center_x":0.5,"center_y":0.5}
+
+    MDBoxLayout:
+        orientation: 'vertical'
+        padding: 50
+
+        MDLabel:
+            text: "Developer"
+            #pos_hint: {"center_x":0.5,"center_y":0.5}
+            halign: 'center'
+            valign: 'middle'
+
+        MDLabel:
+            text: "Saad Ibne Sohael"
+            halign: 'center'
+            valign: 'middle'
+            #pos_hint: {"center_x":0.5,"center_y":0.5}
+
+        MDLabel:
+            text: "Contact"
+            halign: 'center'
+            valign: 'middle'
+            #pos_hint: {"center_x":0.5,"center_y":0.5}
+
+        MDGridLayout:
+            cols: 3
+            rows: 1
+            spacing : 30
+            pos_hint: {'center_x':0.6}
+
+            MDRectangleFlatButton:
+                text: "Gmail"
+                line_color: utils.get_color_from_hex("#EA4335")
+                text_color: utils.get_color_from_hex("#EA4335")
+                on_release:
+                    root.open_web("gmail")
+
+            MDRectangleFlatButton:
+                text: "Facebook"
+                line_color: utils.get_color_from_hex("#4267B2")
+                text_color: utils.get_color_from_hex("#4267B2")
+                on_release:
+                    root.open_web("facebook")
+
+            MDRectangleFlatButton:
+                text: "Instagram"
+                line_color: utils.get_color_from_hex("#fbad50")
+                text_color: utils.get_color_from_hex("#fbad50")
+                on_release:
+                    root.open_web("instagram")
+
 
 <SettingsScreen>:
     name: "SettingsScreen"
