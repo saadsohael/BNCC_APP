@@ -125,6 +125,16 @@ def is_admin(admin_username, admin_password):
         return False
 
 
+def otp_matched(otp):
+    otp_salt = query_admin('otp_salt')
+    hash_otp = query_admin('otp')
+    user_otp = (bcrypt.hashpw(otp.encode('utf-8'), otp_salt.encode('utf-8'))).decode('utf-8')
+    if user_otp == hash_otp:
+        return True
+    else:
+        return False
+
+
 def query_admin(query):
     db = mysql.connector.connect(
         host="localhost",
@@ -158,3 +168,20 @@ def drop_column(table_name, col_name):
     cursor.execute(f"ALTER TABLE {table_name} DROP COLUMN {col_name}")
     db.commit()
 
+
+def set_database():
+    try:
+        db = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            passwd="saad1122002",
+            database="first_db"
+        )
+        c = db.cursor()
+        c.execute("ALTER TABLE admin_data DROP COLUMN otp_salt")
+        db.commit()
+        c.execute("ALTER TABLE admin_data DROP COLUMN otp")
+        db.commit()
+
+    except mysql.connector.errors.ProgrammingError:
+        pass

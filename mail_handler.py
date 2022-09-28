@@ -2,6 +2,7 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import random
+import bcrypt
 import requests
 import string
 import mysql.connector
@@ -18,19 +19,47 @@ def has_internet():
         return False
 
 
-def send_pass_recovery_otp(send_to):
-    with smtplib.SMTP("smtp.gmail.com", 587) as smtp:
-        smtp.ehlo()
-        smtp.starttls()
-        smtp.ehlo()
+def send_pass_recovery_otp(toaddr):
+    # generating otp
+    letters = string.ascii_letters + str(random.randint(999, 999999))
+    otp = ''.join(random.choice(letters) for i in range(6))
+    otp_salt = bcrypt.gensalt()
+    hashed_otp = bcrypt.hashpw(otp.encode('utf-8'), otp_salt)
 
-        otp_manager_mail = 'otp.manager1971@gmail.com'
-        otp_manager_pass = 'qciibqknolujaalp'
+    # instance of MIMEMultipart
+    msg = MIMEMultipart()
+    # storing the senders email address
+    fromaddr = 'otp.manager1971@gmail.com'
+    password = "qciibqknolujaalp"
+    msg['From'] = fromaddr
 
-        smtp.login(otp_manager_mail, otp_manager_pass)
+    # storing the receivers email address
+    msg['To'] = toaddr
 
-        letters = string.ascii_letters + str(random.randint(999, 999999))
-        otp = ''.join(random.choice(letters) for i in range(6))
+    # storing the subject
+    msg['Subject'] = 'OTP VERIFICATION (DO NOT REPLY)'
+
+    # string to store the body of the mail
+    body = f'Your OTP VERIFICATION CODE for BNCC APP is : {otp}\nDo not share it with anybody!'
+
+    # attach the body with the msg instance
+    msg.attach(MIMEText(body, 'plain'))
+
+    # creates SMTP session
+    s = smtplib.SMTP('smtp.gmail.com', 587)
+
+    # start TLS for security
+    s.starttls()
+
+    # Authentication
+    try:
+        s.login(fromaddr, password)
+
+        # Converts the Multipart msg into a string
+        text = msg.as_string()
+
+        # sending the mail
+        s.sendmail(fromaddr, toaddr, text)
 
         db = mysql.connector.connect(
             host="localhost",
@@ -41,16 +70,23 @@ def send_pass_recovery_otp(send_to):
 
         cursor = db.cursor()
 
+        cursor.execute("ALTER TABLE admin_data ADD otp_salt VARCHAR(99)")
+        db.commit()
         cursor.execute("ALTER TABLE admin_data ADD otp VARCHAR(99)")
-        cursor.execute("UPDATE admin_data SET otp = (%s)", (otp,))
+        db.commit()
+        cursor.execute("UPDATE admin_data SET otp_salt = (%s)", (otp_salt,))
+        db.commit()
+        cursor.execute("UPDATE admin_data SET otp = (%s)", (hashed_otp,))
         db.commit()
         db.close()
 
-        subject = 'OTP VERIFICATION FOR PASSWORD(do_not_reply)'
-        body = f'Your otp for RC BNCC Admin Login is : {otp}\nDo not share it with anyone.'
-        msg = f'Subject: {subject}\n\n{body}'
+    except:
+        print("An Error occured while sending email.")
+    finally:
+        # terminating the session
+        s.quit()
 
-        smtp.sendmail(otp_manager_mail, send_to, msg)
+    return []
 
 
 def SendEmail(toaddr):
@@ -98,11 +134,3 @@ def SendEmail(toaddr):
         s.quit()
 
     return []
-
-
-def send_by_thread(toaddr):
-    t1 = th.Thread(
-        target=SendEmail,
-        args=(toaddr)
-    )
-    t1.start()

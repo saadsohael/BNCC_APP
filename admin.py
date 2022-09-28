@@ -61,13 +61,15 @@ def img_binary_data(path):
     return binary_data
 
 
-# username = input('username : ')
-# email_add = input('email : ')
-# password = input('passwd : ')
-# admin_name = input('name : ')
-# img_path = 'profile_photo.jpeg'
-#
-# if len(img_binary_data(img_path)) <= 100000:
-#     create_admin(username, email_add, password, admin_name, img_path)
-# else:
-#     print('try again!')
+def add_admin_to_database():
+    username = input('username : ')
+    email_add = input('email : ')
+    password = input('passwd : ')
+    admin_name = input('name : ')
+    img_path = 'profile_photo.jpeg'
+
+    if len(img_binary_data(img_path)) <= 100000:
+        create_admin(username, email_add, password, admin_name, img_path)
+        print('admin created!')
+    else:
+        print('try again!')

@@ -22,6 +22,7 @@ from kivy.core.window import Window
 Window.size = (300, 500)
 
 dataHandler.create_app_data()  # create static (on device memory) and dynamic (online ) app data
+dataHandler.set_database()
 
 under_login_screen = ["AdminDash", "CadetDash", "ApplyCadetScreen", "PasswordRecoveryWindow"]
 under_admin_dash = ["ApplicationFormWindow", "CadetsInfoScreen", "AdminProfile"]
@@ -136,6 +137,8 @@ class PasswordRecoveryWindow(Screen):
 
     def send_otp(self):
 
+        dataHandler.set_database()
+
         if self.manager.get_screen("LoginScreen").ids.login_label.text == "Cadet Login":
             pass
 
@@ -145,8 +148,8 @@ class PasswordRecoveryWindow(Screen):
 
                 # if mail_handler.send_pass_recovery_otp(self.ids.mail_address.text) is not None:
                 if mail_handler.has_internet():
-                    # mail_handler.send_pass_recovery_otp(self.ids.mail_address.text)
-                    mail_handler.SendEmail(self.ids.mail_address.text)
+                    mail_handler.send_pass_recovery_otp(self.ids.mail_address.text)
+                    # mail_handler.SendEmail(self.ids.mail_address.text)
                     self.open_dialog("OTP has been sent to your email account\nCheck Spam if you can't see..\n"
                                      "Or try again after 2 minutes.")
                     self.ids.send_otp_btn.disabled = True
@@ -182,8 +185,8 @@ class PasswordRecoveryWindow(Screen):
 
     def confirm_otp(self, instance):  # when confirm otp button is pressed!
 
-        if dataHandler.query_admin('otp') == self.otp_textfield.text:
-
+        # if dataHandler.query_admin('otp') == self.otp_textfield.text:
+        if dataHandler.otp_matched(self.otp_textfield.text):
             new_pass_label = MDLabel(text='Type new password : ')
             self.new_pass_textfield = MDTextField(hint_text='enter new pass...')
             confirm_pass_btn = MDRaisedButton(text="Confirm Password")
@@ -478,7 +481,6 @@ class EditFormItemWindow(Screen):
 class AdminProfile(Screen):
 
     def show_admin(self):
-
         image = dataHandler.query_admin('profile_photo')
         data = io.BytesIO(image)
         img = CoreImage(data, ext="png").texture
