@@ -1,4 +1,5 @@
 import io
+import time
 import webbrowser
 from kivymd.app import MDApp
 from kivy.uix.screenmanager import ScreenManager, Screen
@@ -22,7 +23,7 @@ from kivy.core.window import Window
 Window.size = (300, 500)
 
 dataHandler.create_app_data()  # create static (on device memory) and dynamic (online ) app data
-# dataHandler.set_database()
+dataHandler.set_database()
 
 under_login_screen = ["AdminDash", "CadetDash", "ApplyCadetScreen", "PasswordRecoveryWindow"]
 under_admin_dash = ["ApplicationFormWindow", "CadetsInfoScreen", "AdminProfile"]
@@ -135,6 +136,9 @@ class LoginScreen(Screen):
 
 class PasswordRecoveryWindow(Screen):
 
+    def __init__(self, **kwargs):
+        super(PasswordRecoveryWindow, self).__init__(**kwargs)
+
     def send_otp(self):
 
         if self.manager.get_screen("LoginScreen").ids.login_label.text == "Cadet Login":
@@ -145,26 +149,41 @@ class PasswordRecoveryWindow(Screen):
             if self.ids.mail_address.text == dataHandler.query_admin('admin_email'):
 
                 if mail_handler.has_internet():
-                    mail_handler.mail_by_thread(self.ids.mail_address.text)
-                    self.open_dialog("OTP has been sent to your email account\nCheck Spam if you can't see..\n"
-                                     "Or try again after 2 minutes.")
-                    self.ids.send_otp_btn.disabled = True
-                    self.start_countdown()
 
-                    otp_label = MDLabel(text='type otp : ')
-                    self.otp_textfield = MDTextField(hint_text='enter otp here...')
-                    confirm_otp_btn = MDRaisedButton(text="Confirm OTP")
-                    confirm_otp_btn.bind(on_release=self.confirm_otp)
-                    blank_space_ = MDLabel(text='')
+                    if dataHandler.query_app_data('dynamic_app_data')[1] < 20 and \
+                            dataHandler.query_app_data('dynamic_app_data')[2] < 20:
 
-                    self.ids.reset_items.clear_widgets()
-                    self.ids.reset_items.add_widget(otp_label)
-                    self.ids.reset_items.add_widget(self.otp_textfield)
-                    self.ids.reset_items.add_widget(confirm_otp_btn)
-                    self.ids.reset_items.add_widget(blank_space_)
+                        if not dataHandler.otp_recently_sent([v for v in time.asctime().split(" ") if v != '']):
+
+                            mail_handler.mail_by_thread(self.ids.mail_address.text)
+                            dataHandler.mark_otp()
+                            dataHandler.update_otp_counter("increase")
+                            self.open_dialog("OTP has been sent to your email account\nCheck Spam if you can't see..\n"
+                                             "Or try again after 2 minutes.")
+                            self.ids.send_otp_btn.disabled = True
+                            self.start_countdown()
+
+                            otp_label = MDLabel(text='type otp : ')
+                            self.otp_textfield = MDTextField(hint_text='enter otp here...')
+                            confirm_otp_btn = MDRaisedButton(text="Confirm OTP")
+                            confirm_otp_btn.bind(on_release=self.confirm_otp)
+                            blank_space_ = MDLabel(text='')
+
+                            self.ids.reset_items.clear_widgets()
+                            self.ids.reset_items.add_widget(otp_label)
+                            self.ids.reset_items.add_widget(self.otp_textfield)
+                            self.ids.reset_items.add_widget(confirm_otp_btn)
+                            self.ids.reset_items.add_widget(blank_space_)
+
+                        else:
+                            self.open_dialog("You cannot change otp more than everyday.\nPlease try again Tomorrow!")
+
+                    else:
+                        self.open_dialog("Oops! Something went wrong.\nPlease Try Again Tomorrow!")
 
                 else:
                     toast("Could not connect to the internet!")
+
             else:
                 toast("Wrong Email Address!")
 
@@ -213,13 +232,14 @@ class PasswordRecoveryWindow(Screen):
     a = NumericProperty(countdown_seconds)  # because we want 120 seconds to pass before requesting another otp
 
     def start_countdown(self):
+
         Animation.cancel_all(self)  # stop any current animations
         self.anim = Animation(a=0, duration=self.a)
 
         def finish_callback(animation, incr_crude_clock):
             incr_crude_clock.text = ''
             self.ids.send_otp_btn.disabled = False
-            self.a = 5
+            self.a = 120
 
         self.anim.bind(on_complete=finish_callback)
         self.anim.start(self)
@@ -242,9 +262,9 @@ class ApplyCadetScreen(Screen):
         form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0])
 
         for v in form_items:
-            label = MDLabel(text=v, size_hint_x=0.55)
-            textfield = MDTextField(mode="rectangle")
-
+            label = MDLabel(text=v, size_hint_x=0.7)
+            textfield = MDTextField(mode="rectangle", size_hint_x=0.3,
+                                    hint_text="DD/MM/YYYY" if v == 'Date Of Birth : ' else '', )
             self.ids.application_form.add_widget(label)
             self.ids.application_form.add_widget(textfield)
 
@@ -480,22 +500,28 @@ class EditFormItemWindow(Screen):
 class AdminProfile(Screen):
 
     def show_admin(self):
-        admin_data = admin.fetch_admin_data()
+        self.adm_info = admin.admin_info()
+        admin_data = admin.fetch_admin_data()  # get admin data from database
+
+        # showing profile photo on app
         image = dataHandler.query_admin('profile_photo')
         data = io.BytesIO(image)
         img = CoreImage(data, ext="png").texture
-        self.ids.admin_profile_photo.source = 'a.jpg'
+        # self.ids.admin_profile_photo.source = 'a.jpg'
         self.ids.admin_profile_photo.texture = img
+        self.info_dic = {}
 
-        self.admin_name = admin_data[0]
-        self.admin_email = admin_data[1]
+        for v in range(len(self.adm_info)):
+            self.item = TwoLineListItem(text=self.adm_info[v], secondary_text=admin_data[v + 4],
+                                        on_press=lambda x: self.show_data())
+            self.item.id = self.item.text
+            self.info_dic[self.item.id] = self.item
+            self.ids.admin_info.add_widget(self.item)
 
-        self.ids.admin_info.add_widget(
-            TwoLineListItem(text=f"Name", secondary_text=self.admin_name,
-                            on_press=lambda x: toast("Name : " + self.admin_name)))
-        self.ids.admin_info.add_widget(
-            TwoLineListItem(text=f"Mail", secondary_text=self.admin_email,
-                            on_press=lambda x: toast("Name : " + self.admin_email)))
+    def show_data(self):
+        for v in self.info_dic.values():
+            if v.state == 'down':
+                toast(f'{v.text} : {v.secondary_text}', duration=3)
 
 
 class CadetsInfoScreen(Screen):

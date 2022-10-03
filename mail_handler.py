@@ -8,6 +8,8 @@ import string
 import mysql.connector
 import threading as th
 
+import dataHandler
+
 
 def has_internet():
     url = "https://mail.google.com/"
@@ -28,9 +30,15 @@ def send_pass_recovery_otp(toaddr):
 
     # instance of MIMEMultipart
     msg = MIMEMultipart()
+
     # storing the senders email address
-    fromaddr = 'otp.manager1971@gmail.com'
-    password = "qciibqknolujaalp"
+    if dataHandler.query_app_data('dynamic_app_data')[1] < 20:
+        fromaddr = 'otp.manager1971@gmail.com'
+        password = "qciibqknolujaalp"
+    else:
+        fromaddr = 'otp.manager1969@gmail.com'
+        password = "asdf"
+
     msg['From'] = fromaddr
 
     # storing the receivers email address
