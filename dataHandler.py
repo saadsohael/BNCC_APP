@@ -338,4 +338,4 @@ def add_column(table_name, new_col_name):
 
 
 def add_cadet_que():
-    passl
+    pass
