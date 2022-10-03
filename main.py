@@ -259,14 +259,23 @@ class ApplyCadetScreen(Screen):
     # create an application form window with the items in the dynamic (online) database
 
     def create_form(self):
+
         form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0])
 
+        hintText = ''
         for v in form_items:
-            label = MDLabel(text=v, size_hint_x=0.7)
-            textfield = MDTextField(mode="rectangle", size_hint_x=0.3,
-                                    hint_text="DD/MM/YYYY" if v == 'Date Of Birth : ' else '', )
+            if v == 'Date Of Birth : ':
+                hintText = 'DD/MM/YYYY'
+            if v == 'Height : ':
+                hintText = 'in inch'
+            if v == 'Weight : ':
+                hintText = 'in kg'
+
+            label = MDLabel(text=v, size_hint_x=0.55)
+            textfield = MDTextField(mode="rectangle", size_hint_x=0.45, hint_text=hintText)
             self.ids.application_form.add_widget(label)
             self.ids.application_form.add_widget(textfield)
+            hintText = ''
 
 
 class AdminDash(Screen):
@@ -409,6 +418,7 @@ class EditFormItemWindow(Screen):
                                       f'{item_name} : ')  # inserts new item after the selected dropdown item
 
                 dataHandler.update_app_data("dynamic_app_data", "application_form", repr(form_items))
+                dataHandler.add_column('cadet_application_data', item_name)
                 toast("Item Successfully Added To Application Form!")
 
                 self.ids.item_name_input.text = ''

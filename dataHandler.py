@@ -72,13 +72,13 @@ def create_app_data():
     )
 
     form_items = ["Name : ",
-                  "Email : "
+                  "Email : ",
                   "Father's Name : ",
                   "Mother's Name : ",
                   "Permanent Address : ",
                   "Height : ",
-                  "Width : ",
-                  "Any Genetic Disorder : "]
+                  "Weight : ",
+                  "Blood Group : "]
     primary_application_form = repr(form_items)
 
     c = online_db.cursor()
@@ -99,6 +99,17 @@ def create_app_data():
     if application_form_items == '':
         c.execute("INSERT INTO dynamic_app_data VALUES(%s,0,0,%s)", (primary_application_form, time_now,))
         online_db.commit()
+
+    c.execute("""CREATE TABLE IF NOT EXISTS cadet_application_data(
+                Name VARCHAR(255),
+                Father_Name VARCHAR(255),
+                Mother_Name VARCHAR(255),
+                Permanent_Address VARCHAR(255),
+                Email VARCHAR(255),
+                Height VARCHAR(99),
+                Weight VARCHAR(99),
+                Blood_Group VARCHAR(99))""")
+    online_db.commit()
 
     online_db.close()
 
@@ -293,6 +304,8 @@ def set_database():
 
     prev_day, prev_month, prev_date, prev_hour, prev_year = [v for v in data.split(" ") if v != '']
     day_now, month_now, date_now, hour_now, year_now = [v for v in time.asctime().split(" ") if v != '']
+    prev_hour = int(prev_hour.split(":")[0])
+    hour_now = int(hour_now.split(":")[0])
 
     if year_now == prev_year:
         if month_now == prev_month:
@@ -309,14 +322,20 @@ def set_database():
     else:
         update_otp_counter('reset')
 
-# db = mysql.connector.connect(
-#     host="localhost",
-#     user="root",
-#     passwd="saad1122002",
-#     database="first_db"
-# )
-# c = db.cursor()
-# c.execute("UPDATE dynamic_app_data SET otp_manager_1 = 20")
-# db.commit()
-# c.execute("UPDATE dynamic_app_data SET otp_manager_2 = 20")
-# db.commit()
+
+def add_column(table_name, new_col_name):
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        passwd="saad1122002",
+        database="first_db"
+    )
+    c = db.cursor()
+
+    c.execute(f"ALTER TABLE {table_name} ADD COLUMN {new_col_name} VARCHAR(255)")
+    db.commit()
+    db.close()
+
+
+def add_cadet_que():
+    passl
