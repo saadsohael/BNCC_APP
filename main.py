@@ -176,7 +176,7 @@ class PasswordRecoveryWindow(Screen):
                             self.ids.reset_items.add_widget(blank_space_)
 
                         else:
-                            self.open_dialog("You cannot change otp more than everyday.\nPlease try again Tomorrow!")
+                            self.open_dialog("You cannot change otp more than once a day.\nPlease try again Tomorrow!")
 
                     else:
                         self.open_dialog("Oops! Something went wrong.\nPlease Try Again Tomorrow!")

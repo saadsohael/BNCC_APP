@@ -187,25 +187,35 @@ WindowManager:
             ScrollView:
                 MDList:
                     OneLineListItem:
+                        text: "Dash"
+                        on_release:
+                            root.manager.current = "AdminDash"
+                            nav_drawer.set_state("closed")
+
+                    OneLineListItem:
                         text: "Profile"
                         on_release:
                             root.manager.get_screen("AdminProfile").show_admin()
                             root.manager.current = "AdminProfile"
+                            nav_drawer.set_state("closed")
 
                     OneLineListItem:
                         text: "Cadets Info"
                         on_release:
                             root.manager.current = "CadetsInfoScreen"
+                            nav_drawer.set_state("closed")
 
                     OneLineListItem:
                         text: "Notice Board"
                         on_release:
                             root.manager.current = "NoticeScreen"
+                            nav_drawer.set_state("closed")
 
                     OneLineListItem:
                         text: "About"
                         on_release:
                             root.manager.current = "AboutScreen"
+                            nav_drawer.set_state("closed")
 
                     OneLineListItem:
                         text: "Settings"
@@ -217,7 +227,7 @@ WindowManager:
                         on_release:
                             root.manager.current = "LoginScreen"
                             root.manager.get_screen("AdminDash").ids.nav_drawer.status = 'closed'
-
+                            nav_drawer.set_state("closed")
 <CadetDash>:
     name: "CadetDash"
 
@@ -320,6 +330,62 @@ WindowManager:
 
 
                     Widget:
+
+    MDNavigationDrawer:
+        id: nav_drawer
+        size_hint_x: None
+        width: root.width * (3/4)
+
+        BoxLayout:
+            orientation: "vertical"
+            padding: 30, 60
+            spacing : 20
+
+            MDLabel:
+                text: "Admin Dash"
+                size_hint_y: None
+                height: self.texture_size[1]
+                padding: (80,20)
+
+            ScrollView:
+                MDList:
+                    OneLineListItem:
+                        text: "Dash"
+                        on_release:
+                            nav_drawer.set_state("closed")
+                            root.manager.current = "AdminDash"
+
+                    OneLineListItem:
+                        text: "Profile"
+                        on_release:
+                            root.manager.get_screen("AdminProfile").show_admin()
+                            root.manager.current = "AdminProfile"
+
+                    OneLineListItem:
+                        text: "Cadets Info"
+                        on_release:
+                            root.manager.current = "CadetsInfoScreen"
+
+                    OneLineListItem:
+                        text: "Notice Board"
+                        on_release:
+                            root.manager.current = "NoticeScreen"
+
+                    OneLineListItem:
+                        text: "About"
+                        on_release:
+                            root.manager.current = "AboutScreen"
+
+                    OneLineListItem:
+                        text: "Settings"
+                        on_release:
+                            root.manager.current = "SettingsScreen"
+
+                    OneLineListItem:
+                        text: "Log Out"
+                        on_release:
+                            root.manager.current = "LoginScreen"
+                            root.manager.get_screen("AdminDash").ids.nav_drawer.status = 'closed'
 
 
 
