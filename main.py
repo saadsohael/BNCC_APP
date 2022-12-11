@@ -1,14 +1,15 @@
 import io
 import time
 import webbrowser
+from kivy.uix.scrollview import ScrollView
 from kivymd.app import MDApp
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.lang import Builder
 from kivymd.toast import toast
-from kivymd.uix.button import MDFlatButton, MDRaisedButton
+from kivymd.uix.button import MDFlatButton, MDRaisedButton, MDFloatingActionButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.label import MDLabel
-from kivymd.uix.list import TwoLineListItem
+from kivymd.uix.list import TwoLineListItem, MDList
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.textfield import MDTextField
 from kivy.metrics import sp
@@ -130,6 +131,11 @@ class LoginScreen(Screen):
         elif self.manager.current == "EditFormItemWindow":
             self.manager.get_screen("ApplicationFormWindow").show_form()
             self.manager.current = "ApplicationFormWindow"
+
+        elif self.manager.current in ["ShowNoticeScreen", "CreateNoticeScreen"]:
+            self.manager.get_screen("NoticeScreen").clear_widgets()
+            self.manager.get_screen("NoticeScreen").show_notices()
+            self.manager.current = "NoticeScreen"
 
         self.manager.transition.direction = 'right'
 
@@ -277,6 +283,9 @@ class ApplyCadetScreen(Screen):
             self.ids.application_form.add_widget(textfield)
             hintText = ''
 
+    def confirm_apply_btn(self):
+        pass
+
 
 class AdminDash(Screen):
     pass
@@ -311,7 +320,6 @@ class EditFormItemWindow(Screen):
 
         self.form_items_names = []  # <== contains only the form item names without ':'
         for v in eval(dataHandler.query_app_data("dynamic_app_data")[0]):
-            # self.form_items_names.append(' '.join([i for i in v.split(" ") if i != ':']))
             self.form_items_names.append(''.join(v.split(":")).rstrip())
 
     # handles keyboard/ touch input!
@@ -543,7 +551,77 @@ class CadetDash(Screen):
 
 
 class NoticeScreen(Screen):
-    pass
+
+    def __init__(self, **kwargs):
+        super(NoticeScreen, self).__init__(**kwargs)
+        self.notice_dic = {}
+
+    def show_notices(self):
+        scroll_view = ScrollView()
+        md_list = MDList()
+        action_button = MDFloatingActionButton(icon='plus', pos_hint={'center_x': 0.8, 'center_y': 0.1})
+        action_button.bind(on_release=self.create_notice)
+
+        notices = dataHandler.fetch_notices()
+        for notice in notices:
+            notice_item = TwoLineListItem(text=notice[0], secondary_text=notice[1],
+                                          on_release=lambda x: self.view_notice())
+            notice_item.id = notice_item.text
+            self.notice_dic[notice_item.id] = notice_item
+            md_list.add_widget(notice_item)
+
+        scroll_view.add_widget(md_list)
+        self.add_widget(scroll_view)
+        self.add_widget(action_button)
+
+    def create_notice(self, instance):
+        self.manager.current = 'CreateNoticeScreen'
+
+    def view_notice(self):
+
+        for notice in self.notice_dic.values():
+            if notice.state == 'down':
+                self.manager.get_screen("ShowNoticeScreen").title = notice.text
+                self.manager.get_screen("ShowNoticeScreen").text = notice.secondary_text
+        self.manager.get_screen("ShowNoticeScreen").view_notice()
+        self.manager.current = 'ShowNoticeScreen'
+
+
+class ShowNoticeScreen(Screen):
+    def __init__(self, **kwargs):
+        super(ShowNoticeScreen, self).__init__(**kwargs)
+        self.title = ''
+        self.text = ''
+
+    def view_notice(self):
+        self.ids.notice_title.text = self.title
+        self.ids.notice_text.text = self.text
+
+    def delete_notice(self):
+        dataHandler.delete_notice(self.ids.notice_title.text)
+        self.manager.get_screen("NoticeScreen").clear_widgets()
+        self.manager.get_screen("NoticeScreen").show_notices()
+        self.manager.current = "NoticeScreen"
+        toast("Notice Deleted Successfully")
+
+
+class CreateNoticeScreen(Screen):
+
+    def __init__(self, **kwargs):
+        super(CreateNoticeScreen, self).__init__(**kwargs)
+
+    def create_notice(self, notice_title, notice_text):
+        notice_title = notice_title.capitalize()
+        if not notice_title.isspace() and not notice_text.isspace() and notice_title != '' and notice_text != '':
+            dataHandler.add_notice(notice_title, notice_text)
+            self.ids.notice_title.text = ''
+            self.ids.notice_textfield.text = ''
+            toast('Notice Successfully Added!')
+        else:
+            if notice_title.isspace():
+                toast('Title cannot be empty!')
+            else:
+                toast('Notice cannot be empty!')
 
 
 class AboutScreen(Screen):
@@ -590,7 +668,6 @@ class MainApp(MDApp):
         kvFile = Builder.load_file("app_design.kv")
 
         return kvFile
-        # return AdminProfile()
 
     def update_theme(self):
         theme_color = dataHandler.query_app_data("static_app_data")[0]

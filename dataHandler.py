@@ -87,6 +87,7 @@ def create_app_data():
                 otp_manager_1 INTEGER(99),
                 otp_manager_2 INTEGER(99),
                 otp_last_updated VARCHAR(255))""")
+
     online_db.commit()
 
     c.execute("SELECT application_form FROM dynamic_app_data")
@@ -109,7 +110,17 @@ def create_app_data():
                 Height VARCHAR(99),
                 Weight VARCHAR(99),
                 Blood_Group VARCHAR(99))""")
+
     online_db.commit()
+
+    c.execute("CREATE TABLE IF NOT EXISTS notice_board(Notice_Title VARCHAR(255), Notices VARCHAR (999))")
+    online_db.commit()
+
+    c.execute("SELECT Notice_Title FROM notice_board")
+    data = c.fetchall()
+    if not data:
+        c.execute("INSERT INTO notice_board VALUES('No Notices', '')")
+        online_db.commit()
 
     online_db.close()
 
@@ -339,3 +350,51 @@ def add_column(table_name, new_col_name):
 
 def add_cadet_que():
     pass
+
+
+def add_notice(title, notice):
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        passwd="saad1122002",
+        database="first_db"
+    )
+    c = db.cursor()
+    c.execute("SELECT Notice_Title FROM notice_board")
+    data = c.fetchall()
+    if data[-1][0] == 'No Notices':
+        c.execute("UPDATE notice_board SET Notice_Title = (%s)", (title,))
+        db.commit()
+        c.execute("UPDATE notice_board SET Notices = (%s)", (notice,))
+        db.commit()
+    else:
+        c.execute("INSERT INTO notice_board VALUES (%s, %s)", (title, notice,))
+        db.commit()
+
+
+def fetch_notices():
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        passwd="saad1122002",
+        database="first_db"
+    )
+    c = db.cursor()
+    c.execute("SELECT * FROM notice_board")
+    data = c.fetchall()
+    if data:
+        return data
+    else:
+        return [('No Notices', '')]
+
+
+def delete_notice(title):
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        passwd="saad1122002",
+        database="first_db"
+    )
+    c = db.cursor()
+    c.execute("DELETE FROM notice_board WHERE Notice_Title = (%s)", (title,))
+    db.commit()

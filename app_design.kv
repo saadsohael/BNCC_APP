@@ -7,13 +7,14 @@ WindowManager:
     AdminProfile:
     CadetsInfoScreen:
     CadetDash:
-    NoticeScreen:
     AboutScreen:
     SettingsScreen:
     PasswordRecoveryWindow:
+    NoticeScreen:
+    CreateNoticeScreen:
+    ShowNoticeScreen:
 
 #: import utils kivy.utils
-#: import toast kivymd.toast
 
 <LoginScreen>:
     name: "LoginScreen"
@@ -150,6 +151,9 @@ WindowManager:
             text: "Create Notice"
             md_bg_color: utils.get_color_from_hex("#3067ddff")
             on_release:
+                root.manager.get_screen("NoticeScreen").show_notices()
+                root.manager.current = "NoticeScreen"
+                nav_drawer.set_state("closed")
 
     MDNavigationLayout:
         ScreenManager:
@@ -208,6 +212,7 @@ WindowManager:
                     OneLineListItem:
                         text: "Notice Board"
                         on_release:
+                            root.manager.get_screen("NoticeScreen").show_notices()
                             root.manager.current = "NoticeScreen"
                             nav_drawer.set_state("closed")
 
@@ -238,11 +243,11 @@ WindowManager:
     MDBoxLayout:
         size_hint_y: None
         height: root.height - sp(60)
+        orientation: 'vertical'
 
         ScrollView:
             MDList:
                 MDGridLayout:
-
                     id: application_form
                     cols: 2
                     size_hint: None, None
@@ -260,6 +265,8 @@ WindowManager:
                     spacing : 30
                     MDRectangleFlatButton:
                         text: "Apply"
+                        on_release:
+                            root.confirm_apply_btn()
                     MDRectangleFlatButton:
                         text: "Go Back"
                         on_release:
@@ -394,6 +401,71 @@ WindowManager:
 
 <NoticeScreen>:
     name: "NoticeScreen"
+
+<CreateNoticeScreen>:
+    name: "CreateNoticeScreen"
+    MDBoxLayout:
+        orientation: 'vertical'
+
+        MDGridLayout:
+            rows: 3
+            cols: 1
+
+            MDTextField:
+                id: notice_title
+                size_hint_y: 0.1
+                hint_text: 'type notice title'
+                multiline: False
+                max_text_length: 250
+
+            MDTextField:
+                id: notice_textfield
+                size_hint_y: 0.8
+                hint_text: 'type notice here'
+                multiline: True
+                max_text_length: 990
+
+            MDGridLayout:
+                cols: 2
+                rows: 1
+                size_hint_y: 0.1
+
+                MDRaisedButton:
+                    text: "Create"
+                    on_release:
+                        root.create_notice(notice_title.text, notice_textfield.text)
+
+                MDRaisedButton:
+                    text: "Clear"
+                    on_release:
+                        notice_title.text = ''
+                        notice_textfield.text = ''
+
+<ShowNoticeScreen>:
+    name: "ShowNoticeScreen"
+    GridLayout:
+        cols: 1
+        rows: 2
+        Label:
+            id: notice_title
+            text: ''
+            size_hint_y: 0.2
+        ScrollView:
+            Label:
+                id: notice_text
+                size_hint_y: None
+                height: self.texture_size[1]
+                text_size: self.width, None
+                text: ''
+                padding: 25, 0
+
+    MDIconButton:
+        icon: "delete"
+        theme_icon_color: "Custom"
+        icon_color: app.theme_cls.primary_color
+        pos_hint:{'center_x':0.9, 'center_y':0.92}
+        on_release:
+            root.delete_notice()
 
 <AboutScreen>:
     name: "AboutScreen"
