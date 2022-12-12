@@ -45,8 +45,6 @@ def query_app_data(table_name):
         return v
 
 
-# print(eval(query_app_data('dynamic_app_data')[0]))
-
 def create_app_data():
     db = sqlite3.connect("app_data.db")
 
@@ -103,26 +101,25 @@ def create_app_data():
         c.execute("INSERT INTO dynamic_app_data VALUES(%s,0,0,%s)", (primary_application_form, time_now,))
         online_db.commit()
 
-    c.execute(f"CREATE TABLE IF NOT EXISTS cadet_application_data ({form_items[0]} VARCHAR(255))")
+    c.execute("CREATE TABLE IF NOT EXISTS cadet_application_data (Status VARCHAR(255))")
     online_db.commit()
 
     existing_cadet_form_items = query_cadet_col_name()
     for item in form_items:
-        if item != form_items[0]:
-            if item.count("'") > 0:
-                temp_list = []
-                for i in item.split(" "):
-                    if i.count("'") > 0:
-                        temp_list.append(i.split("'")[0])
-                    else:
-                        temp_list.append(i)
-                item = '_'.join(temp_list)
-            else:
-                item = '_'.join(item.split(" "))
+        if item.count("'") > 0:
+            temp_list = []
+            for i in item.split(" "):
+                if i.count("'") > 0:
+                    temp_list.append(i.split("'")[0])
+                else:
+                    temp_list.append(i)
+            item = '_'.join(temp_list)
+        else:
+            item = '_'.join(item.split(" "))
 
-            if item not in existing_cadet_form_items:
-                c.execute(f"ALTER TABLE cadet_application_data ADD COLUMN ({item} VARCHAR(255))")
-                online_db.commit()
+        if item not in existing_cadet_form_items:
+            c.execute(f"ALTER TABLE cadet_application_data ADD COLUMN ({item} VARCHAR(255))")
+            online_db.commit()
 
     c.execute("CREATE TABLE IF NOT EXISTS notice_board(Notice_Title VARCHAR(255), Notices VARCHAR (999))")
     online_db.commit()
@@ -203,7 +200,7 @@ def query_cadet_col_name():
     )
     c = db.cursor()
     c.execute("SHOW COLUMNS FROM first_db.cadet_application_data")
-    data = [v[0] for v in c]
+    data = [v[0] for v in c if v[0] != "Status"]
     return data
 
 
@@ -462,6 +459,6 @@ def add_cadet_info(infolist):
     )
     c = db.cursor()
     sign = ["%s"] * len(infolist)
-    c.execute(f"INSERT INTO cadet_application_data VALUES ({','.join(sign)})", infolist)
+    c.execute(f"INSERT INTO cadet_application_data VALUES ('Pending',{','.join(sign)})", infolist)
     db.commit()
     db.close()
