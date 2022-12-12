@@ -404,5 +404,3 @@ def delete_notice(title):
     c = db.cursor()
     c.execute("DELETE FROM notice_board WHERE Notice_Title = (%s)", (title,))
     db.commit()
-
-print(fetch_notices())
