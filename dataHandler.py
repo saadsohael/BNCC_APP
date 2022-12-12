@@ -106,7 +106,7 @@ def create_app_data():
     c.execute(f"CREATE TABLE IF NOT EXISTS cadet_application_data ({form_items[0]} VARCHAR(255))")
     online_db.commit()
 
-    existing_cadet_form_items = [v[0] for v in get_cadet_col_name()]
+    existing_cadet_form_items = query_cadet_col_name()
     for item in form_items:
         if item != form_items[0]:
             if item.count("'") > 0:
@@ -194,7 +194,7 @@ def query_admin(query):
     return data
 
 
-def get_cadet_col_name():
+def query_cadet_col_name():
     db = mysql.connector.connect(
         host="localhost",
         user="root",
@@ -202,9 +202,8 @@ def get_cadet_col_name():
         database="first_db"
     )
     c = db.cursor()
-    c.execute(
-        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'first_db' AND TABLE_NAME = 'cadet_application_data'")
-    data = c.fetchall()
+    c.execute("SHOW COLUMNS FROM first_db.cadet_application_data")
+    data = [v[0] for v in c]
     return data
 
 
@@ -368,7 +367,7 @@ def add_column(table_name, new_col_name):
     )
     c = db.cursor()
     if table_name == 'cadet_application_data':
-        existing_col_names = [v[0] for v in get_cadet_col_name()]
+        existing_col_names = [v for v in query_cadet_col_name()]
         if new_col_name.count("'") > 0:
             temp_list = []
             for i in new_col_name.split(" "):
@@ -422,6 +421,7 @@ def add_notice(title, notice):
     else:
         c.execute("INSERT INTO notice_board VALUES (%s, %s)", (title, notice,))
         db.commit()
+    db.close()
 
 
 def fetch_notices():
@@ -450,3 +450,18 @@ def delete_notice(title):
     c = db.cursor()
     c.execute("DELETE FROM notice_board WHERE Notice_Title = (%s)", (title,))
     db.commit()
+    db.close()
+
+
+def add_cadet_info(infolist):
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        passwd="saad1122002",
+        database="first_db"
+    )
+    c = db.cursor()
+    sign = ["%s"] * len(infolist)
+    c.execute(f"INSERT INTO cadet_application_data VALUES ({','.join(sign)})", infolist)
+    db.commit()
+    db.close()

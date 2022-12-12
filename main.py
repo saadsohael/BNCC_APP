@@ -268,7 +268,7 @@ class ApplyCadetScreen(Screen):
     def create_form(self):
 
         form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0])
-
+        self.textfields = []
         hintText = ''
         for v in form_items:
             if v == 'Date Of Birth':
@@ -280,14 +280,43 @@ class ApplyCadetScreen(Screen):
 
             label = MDLabel(text=f'{v} : ', size_hint_x=0.55)
             textfield = MDTextField(mode="rectangle", size_hint_x=0.45, hint_text=hintText)
+            self.textfields.append(textfield)
             self.ids.application_form.add_widget(label)
             self.ids.application_form.add_widget(textfield)
             self.form_inputs.append(textfield)
             hintText = ''
 
+    def form_filled(self):
+        for input_box in self.textfields:
+            if input_box.text == '' or input_box.text.isspace():
+                return False
+        return True
+
     def confirm_apply_btn(self):
-        for v in self.form_inputs:
-            print(v.text)
+        new_label = []
+        cadet_info_list = []
+        if self.form_filled():
+            form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0])
+            cadet_cols = [v for v in dataHandler.query_cadet_col_name()]
+            for i in form_items:
+                if i.count("'") > 0:
+                    temp_list = []
+                    for j in i.split(" "):
+                        if j.count("'") > 0:
+                            temp_list.append(j.split("'")[0])
+                        else:
+                            temp_list.append(j)
+                    form_items.insert(form_items.index(i), '_'.join(temp_list))
+                    form_items.remove(i)
+                else:
+                    if i.count(" "):
+                        form_items.insert(form_items.index(i), '_'.join(i.split(" ")))
+                        form_items.remove(i)
+            for v in range(len(cadet_cols)):
+                new_label.insert(v, form_items[form_items.index(cadet_cols[v])])
+                cadet_info_list.insert(v, self.textfields[form_items.index(cadet_cols[v])].text)
+            dataHandler.add_cadet_info(cadet_info_list)
+            toast("Application Form Submitted Successfully!")
 
 
 class AdminDash(Screen):
