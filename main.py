@@ -460,9 +460,30 @@ class EditFormItemWindow(Screen):
 
                     new_form_items = [v for v in self.form_items_names]  # looping through list to format with a ':'
                     dataHandler.update_app_data("dynamic_app_data", "application_form", repr(new_form_items))
-
+                    old_col_name = ''
+                    new_col_name = ''
+                    if self.ids.drop_item.text.count("'") > 0:
+                        temp_list = []
+                        for i in self.ids.drop_item.text.split(" "):
+                            if i.count("'") > 0:
+                                temp_list.append(i.split("'")[0])
+                            else:
+                                temp_list.append(i)
+                        old_col_name = '_'.join(temp_list)
+                    else:
+                        old_col_name = '_'.join(self.ids.drop_item.text.split(" "))
+                    if self.ids.item_name_input.text.count("'") > 0:
+                        temp_list = []
+                        for i in self.ids.item_name_input.text.split(" "):
+                            if i.count("'") > 0:
+                                temp_list.append(i.split("'")[0].capitalize())
+                            else:
+                                temp_list.append(i.capitalize())
+                        new_col_name = '_'.join(temp_list)
+                    else:
+                        new_col_name = '_'.join([v.capitalize() for v in self.ids.item_name_input.text.split(" ")])
+                    dataHandler.change_col_name('cadet_application_data', old_col_name, new_col_name)
                     toast("Item Name Updated!")
-
                     self.ids.item_name_input.text = ''
 
                 else:
@@ -490,7 +511,17 @@ class EditFormItemWindow(Screen):
         self.dialog.open()
 
     def remove_item(self, instance):
+        if self.ids.drop_item.text.count("'") > 0:
+            temp_list = []
+            for i in self.ids.drop_item.text.split(" "):
+                if i.count("'") > 0:
+                    temp_list.append(i.split("'")[0])
+                else:
+                    temp_list.append(i)
+            dataHandler.drop_column('cadet_application_data', '_'.join(temp_list))
 
+        else:
+            dataHandler.drop_column('cadet_application_data', '_'.join(self.ids.drop_item.text.split(" ")))
         self.form_items_names.remove(self.ids.drop_item.text)
         updated_form_items_list = [v for v in self.form_items_names]
         dataHandler.update_app_data("dynamic_app_data", "application_form", repr(updated_form_items_list))

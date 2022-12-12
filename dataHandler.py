@@ -194,6 +194,20 @@ def query_admin(query):
     return data
 
 
+def get_cadet_col_name():
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        passwd="saad1122002",
+        database="first_db"
+    )
+    c = db.cursor()
+    c.execute(
+        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'first_db' AND TABLE_NAME = 'cadet_application_data'")
+    data = c.fetchall()
+    return data
+
+
 def drop_column(table_name, col_name):
     if table_name == 'static_app_data':
         db = sqlite3.connect("app_data.db")
@@ -353,13 +367,37 @@ def add_column(table_name, new_col_name):
         database="first_db"
     )
     c = db.cursor()
-    c.execute(f"ALTER TABLE {table_name} ADD COLUMN ({new_col_name} VARCHAR(255))")
+    if table_name == 'cadet_application_data':
+        existing_col_names = [v[0] for v in get_cadet_col_name()]
+        if new_col_name.count("'") > 0:
+            temp_list = []
+            for i in new_col_name.split(" "):
+                if i.count("'") > 0:
+                    temp_list.append(i.split("'")[0])
+                else:
+                    temp_list.append(i)
+            new_col_name = '_'.join(temp_list)
+        else:
+            new_col_name = '_'.join(new_col_name.split(" "))
+        if new_col_name not in existing_col_names:
+            c.execute(f"ALTER TABLE cadet_application_data ADD COLUMN ({new_col_name} VARCHAR(255))")
+    else:
+        c.execute(f"ALTER TABLE {table_name} ADD COLUMN ({new_col_name} VARCHAR(255))")
     db.commit()
     db.close()
 
 
-def add_cadet_que():
-    pass
+def change_col_name(table_name, old_col_name, new_col_name):
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        passwd="saad1122002",
+        database="first_db"
+    )
+    c = db.cursor()
+    c.execute(f"ALTER TABLE {table_name} CHANGE {old_col_name} {new_col_name} VARCHAR(255)")
+    db.commit()
+    db.close()
 
 
 def add_notice(title, notice):
@@ -412,17 +450,3 @@ def delete_notice(title):
     c = db.cursor()
     c.execute("DELETE FROM notice_board WHERE Notice_Title = (%s)", (title,))
     db.commit()
-
-
-def get_cadet_col_name():
-    db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        passwd="saad1122002",
-        database="first_db"
-    )
-    c = db.cursor()
-    c.execute(
-        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'first_db' AND TABLE_NAME = 'cadet_application_data'")
-    data = c.fetchall()
-    return data
