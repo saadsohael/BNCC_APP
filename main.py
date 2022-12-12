@@ -261,6 +261,7 @@ class ApplyCadetScreen(Screen):
 
     def __init__(self, **kwargs):
         super(ApplyCadetScreen, self).__init__(**kwargs)
+        self.form_inputs = []
 
     # create an application form window with the items in the dynamic (online) database
 
@@ -281,10 +282,12 @@ class ApplyCadetScreen(Screen):
             textfield = MDTextField(mode="rectangle", size_hint_x=0.45, hint_text=hintText)
             self.ids.application_form.add_widget(label)
             self.ids.application_form.add_widget(textfield)
+            self.form_inputs.append(textfield)
             hintText = ''
 
     def confirm_apply_btn(self):
-        pass
+        for v in self.form_inputs:
+            print(v.text)
 
 
 class AdminDash(Screen):
