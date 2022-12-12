@@ -1,0 +1,12 @@
+
+                    if add_toggle_btn.state == "down": \
+                    root.add_item();
+                    elif edit_toggle_btn.state == "down": \
+                    root.edit_item();
+                    elif add_toggle_btn.disabled and edit_toggle_btn.disabled : \
+                    add_toggle_btn.disabled = True; \
+                    edit_toggle_btn.disabled = True; \
+                    item_name_input.disabled = True; \
+                    item_place_label.text = "Select Item"; \
+                    add_or_edit_btn.text = "Remove Item"; \
+                    root.remove_item();

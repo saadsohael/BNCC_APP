@@ -30,6 +30,7 @@ under_login_screen = ["AdminDash", "CadetDash", "ApplyCadetScreen", "PasswordRec
 under_admin_dash = ["ApplicationFormWindow", "CadetsInfoScreen", "AdminProfile"]
 under_cadet_dash = []
 common_screens = ["NoticeScreen", "AboutScreen", "SettingsScreen"]
+print(common_screens)
 
 
 class WindowManager(ScreenManager):
