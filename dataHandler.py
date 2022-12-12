@@ -45,8 +45,7 @@ def query_app_data(table_name):
         return v
 
 
-query_app_data('dynamic_app_data')
-
+# print(eval(query_app_data('dynamic_app_data')[0]))
 
 def create_app_data():
     db = sqlite3.connect("app_data.db")
@@ -74,14 +73,14 @@ def create_app_data():
         database="first_db"
     )
 
-    form_items = ["Name : ",
-                  "Email : ",
-                  "Father's Name : ",
-                  "Mother's Name : ",
-                  "Permanent Address : ",
-                  "Height : ",
-                  "Weight : ",
-                  "Blood Group : "]
+    form_items = ["Name",
+                  "Email",
+                  "Father's Name",
+                  "Mother's Name",
+                  "Permanent Address",
+                  "Height",
+                  "Weight",
+                  "Blood Group"]
     primary_application_form = repr(form_items)
 
     c = online_db.cursor()
@@ -365,11 +364,15 @@ def add_notice(title, notice):
     c = db.cursor()
     c.execute("SELECT Notice_Title FROM notice_board")
     data = c.fetchall()
-    if data[-1][0] == 'No Notices':
-        c.execute("UPDATE notice_board SET Notice_Title = (%s)", (title,))
-        db.commit()
-        c.execute("UPDATE notice_board SET Notices = (%s)", (notice,))
-        db.commit()
+    if data:
+        if data[-1][0] == 'No Notices':
+            c.execute("UPDATE notice_board SET Notice_Title = (%s)", (title,))
+            db.commit()
+            c.execute("UPDATE notice_board SET Notices = (%s)", (notice,))
+            db.commit()
+        else:
+            c.execute("INSERT INTO notice_board VALUES (%s, %s)", (title, notice,))
+            db.commit()
     else:
         c.execute("INSERT INTO notice_board VALUES (%s, %s)", (title, notice,))
         db.commit()

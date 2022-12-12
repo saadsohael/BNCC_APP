@@ -271,14 +271,14 @@ class ApplyCadetScreen(Screen):
 
         hintText = ''
         for v in form_items:
-            if v == 'Date Of Birth : ':
+            if v == 'Date Of Birth':
                 hintText = 'DD/MM/YYYY'
-            if v == 'Height : ':
+            if v == 'Height':
                 hintText = 'in inch'
-            if v == 'Weight : ':
+            if v == 'Weight':
                 hintText = 'in kg'
 
-            label = MDLabel(text=v, size_hint_x=0.55)
+            label = MDLabel(text=f'{v} : ', size_hint_x=0.55)
             textfield = MDTextField(mode="rectangle", size_hint_x=0.45, hint_text=hintText)
             self.ids.application_form.add_widget(label)
             self.ids.application_form.add_widget(textfield)
@@ -309,8 +309,7 @@ class ApplicationFormWindow(Screen):
     def show_form(self):
         form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0])
         for v in form_items:
-            text = ''.join(v.split(":")).rstrip()
-            label = MDLabel(text=text, size_hint_x=0.55, halign="center", valign='middle')
+            label = MDLabel(text=v, size_hint_x=0.55, halign="center", valign='middle')
             self.ids.edit_application_form.add_widget(label)
 
 
@@ -321,9 +320,7 @@ class EditFormItemWindow(Screen):
         Window.bind(on_keyboard=self._key_handler)  # bind screen with keyboard or touch input
         self.item_dropdown_menu = MDDropdownMenu()
 
-        self.form_items_names = []  # <== contains only the form item names without ':'
-        for v in eval(dataHandler.query_app_data("dynamic_app_data")[0]):
-            self.form_items_names.append(''.join(v.split(":")).rstrip())
+        self.form_items_names = eval(dataHandler.query_app_data('dynamic_app_data')[0])
 
     # handles keyboard/ touch input!
     def _key_handler(self, instance, key, *args):
@@ -373,14 +370,14 @@ class EditFormItemWindow(Screen):
 
                 # if form item is not the first or last item in the list! (first: at top, last: at bottom)
                 if form_items.index(v) != 0 and form_items.index(v) != (len(form_items) - 1):
-                    item_dropdown_list.append('After ' + ''.join(v.split(":")).rstrip())
+                    item_dropdown_list.append(f'After {v}')
                 else:
-                    item_dropdown_list.append(''.join(v.split(":")).rstrip())
+                    item_dropdown_list.append(v)
 
             # if user is editing or removing items or doing nothing
             else:
                 # elif self.ids.edit_toggle_btn.state == 'down':
-                item_dropdown_list.append(''.join(v.split(":")).rstrip())
+                item_dropdown_list.append(v)
 
             # elif self.ids.edit_toggle_btn.disabled and self.ids.add_toggle_btn.disabled:
             #     item_dropdown_list.append(' '.join([i for i in v.split(" ") if i != ':']))
@@ -414,19 +411,18 @@ class EditFormItemWindow(Screen):
         item_name = ' '.join(list(map(lambda x: x.capitalize(), input_text)))
 
         if not self.empty_textField(item_name):  # if textfield is not empty!
-            if (item_name + ' : ') not in form_items:  # if item is not already in the application form
+            if item_name not in form_items:  # if item is not already in the application form
 
                 if self.ids.drop_item.text == "At Top":
-                    form_items.insert(0, item_name + ' : ')  # inserts new item at index 0
+                    form_items.insert(0, item_name)  # inserts new item at index 0
 
                 elif self.ids.drop_item.text == "At Bottom":
-                    form_items.append(item_name + ' : ')  # inserts new item at the last index
+                    form_items.append(item_name)  # inserts new item at the last index
 
                 else:
                     place_item = ' '.join([v for v in self.ids.drop_item.text.split(" ") if v != "After"])
-                    index_ = form_items.index(place_item + ' : ') + 1
-                    form_items.insert(index_,
-                                      f'{item_name} : ')  # inserts new item after the selected dropdown item
+                    index_ = form_items.index(place_item) + 1
+                    form_items.insert(index_, item_name)  # inserts new item after the selected dropdown item
 
                 dataHandler.update_app_data("dynamic_app_data", "application_form", repr(form_items))
                 dataHandler.add_column('cadet_application_data', item_name)
@@ -437,8 +433,7 @@ class EditFormItemWindow(Screen):
 
                 # this following code clears the self.form_items_name list to update with the newly added item in form
                 self.form_items_names.clear()
-                for v in eval(dataHandler.query_app_data("dynamic_app_data")[0]):  # looping though new dynamic_app_data
-                    self.form_items_names.append(''.join(v.split(":")).rstrip())
+                self.form_items_names = eval(dataHandler.query_app_data("dynamic_app_data")[0])
 
             else:
                 toast(f'{item_name} is already in the form!')
@@ -463,8 +458,7 @@ class EditFormItemWindow(Screen):
                     self.form_items_names.remove(
                         self.form_items_names[index + 1])  # remove prev item that's been edited
 
-                    new_form_items = [f'{v} : ' for v in
-                                      self.form_items_names]  # looping through list to format with a ':'
+                    new_form_items = [v for v in self.form_items_names]  # looping through list to format with a ':'
                     dataHandler.update_app_data("dynamic_app_data", "application_form", repr(new_form_items))
 
                     toast("Item Name Updated!")
@@ -498,7 +492,7 @@ class EditFormItemWindow(Screen):
     def remove_item(self, instance):
 
         self.form_items_names.remove(self.ids.drop_item.text)
-        updated_form_items_list = [f'{v} : ' for v in self.form_items_names]
+        updated_form_items_list = [v for v in self.form_items_names]
         dataHandler.update_app_data("dynamic_app_data", "application_form", repr(updated_form_items_list))
         toast(f"{self.ids.drop_item.text} removed from Application Form")
         self.ids.drop_item.text = self.form_items_names[0]
@@ -581,13 +575,14 @@ class NoticeScreen(Screen):
         self.manager.current = 'CreateNoticeScreen'
 
     def view_notice(self):
-
         for notice in self.notice_dic.values():
             if notice.state == 'down':
                 self.manager.get_screen("ShowNoticeScreen").title = notice.text
                 self.manager.get_screen("ShowNoticeScreen").text = notice.secondary_text
+                notice.state = 'normal'
         self.manager.get_screen("ShowNoticeScreen").view_notice()
-        self.manager.current = 'ShowNoticeScreen'
+        if self.manager.get_screen("ShowNoticeScreen").title != 'No Notices':
+            self.manager.current = 'ShowNoticeScreen'
 
 
 class ShowNoticeScreen(Screen):
@@ -602,6 +597,9 @@ class ShowNoticeScreen(Screen):
 
     def delete_notice(self):
         dataHandler.delete_notice(self.ids.notice_title.text)
+        self.title = dataHandler.fetch_notices()[-1][0]
+        self.text = dataHandler.fetch_notices()[-1][1]
+        self.manager.get_screen("NoticeScreen").notice_dic = {}
         self.manager.get_screen("NoticeScreen").clear_widgets()
         self.manager.get_screen("NoticeScreen").show_notices()
         self.manager.current = "NoticeScreen"
