@@ -45,6 +45,9 @@ def query_app_data(table_name):
         return v
 
 
+query_app_data('dynamic_app_data')
+
+
 def create_app_data():
     db = sqlite3.connect("app_data.db")
 
