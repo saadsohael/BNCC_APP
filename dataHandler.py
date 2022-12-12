@@ -103,17 +103,26 @@ def create_app_data():
         c.execute("INSERT INTO dynamic_app_data VALUES(%s,0,0,%s)", (primary_application_form, time_now,))
         online_db.commit()
 
-    c.execute("""CREATE TABLE IF NOT EXISTS cadet_application_data(
-                Name VARCHAR(255),
-                Father_Name VARCHAR(255),
-                Mother_Name VARCHAR(255),
-                Permanent_Address VARCHAR(255),
-                Email VARCHAR(255),
-                Height VARCHAR(99),
-                Weight VARCHAR(99),
-                Blood_Group VARCHAR(99))""")
-
+    c.execute(f"CREATE TABLE IF NOT EXISTS cadet_application_data ({form_items[0]} VARCHAR(255))")
     online_db.commit()
+
+    existing_cadet_form_items = [v[0] for v in get_cadet_col_name()]
+    for item in form_items:
+        if item != form_items[0]:
+            if item.count("'") > 0:
+                temp_list = []
+                for i in item.split(" "):
+                    if i.count("'") > 0:
+                        temp_list.append(i.split("'")[0])
+                    else:
+                        temp_list.append(i)
+                item = '_'.join(temp_list)
+            else:
+                item = '_'.join(item.split(" "))
+
+            if item not in existing_cadet_form_items:
+                c.execute(f"ALTER TABLE cadet_application_data ADD COLUMN ({item} VARCHAR(255))")
+                online_db.commit()
 
     c.execute("CREATE TABLE IF NOT EXISTS notice_board(Notice_Title VARCHAR(255), Notices VARCHAR (999))")
     online_db.commit()
@@ -344,8 +353,7 @@ def add_column(table_name, new_col_name):
         database="first_db"
     )
     c = db.cursor()
-
-    c.execute(f"ALTER TABLE {table_name} ADD COLUMN {new_col_name} VARCHAR(255)")
+    c.execute(f"ALTER TABLE {table_name} ADD COLUMN ({new_col_name} VARCHAR(255))")
     db.commit()
     db.close()
 
@@ -404,3 +412,17 @@ def delete_notice(title):
     c = db.cursor()
     c.execute("DELETE FROM notice_board WHERE Notice_Title = (%s)", (title,))
     db.commit()
+
+
+def get_cadet_col_name():
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        passwd="saad1122002",
+        database="first_db"
+    )
+    c = db.cursor()
+    c.execute(
+        "SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'first_db' AND TABLE_NAME = 'cadet_application_data'")
+    data = c.fetchall()
+    return data

@@ -410,6 +410,7 @@ WindowManager:
         MDGridLayout:
             rows: 3
             cols: 1
+            padding: 50, 15
 
             MDTextField:
                 id: notice_title
@@ -417,6 +418,8 @@ WindowManager:
                 hint_text: 'type notice title'
                 multiline: False
                 max_text_length: 250
+                line_color_focus: utils.get_color_from_hex("#fc7b03")
+                mode: 'rectangle'
 
             MDTextField:
                 id: notice_textfield
@@ -424,6 +427,7 @@ WindowManager:
                 hint_text: 'type notice here'
                 multiline: True
                 max_text_length: 990
+                mode: 'rectangle'
 
             MDGridLayout:
                 cols: 2
@@ -443,13 +447,19 @@ WindowManager:
 
 <ShowNoticeScreen>:
     name: "ShowNoticeScreen"
+
     GridLayout:
         cols: 1
         rows: 2
+        padding: 50, 0
+
         Label:
             id: notice_title
             text: ''
             size_hint_y: 0.2
+            color: utils.get_color_from_hex("#fc7b03")
+            font_size: self.width/10
+
         ScrollView:
             Label:
                 id: notice_text
@@ -457,7 +467,7 @@ WindowManager:
                 height: self.texture_size[1]
                 text_size: self.width, None
                 text: ''
-                padding: 25, 0
+                font_size: self.width/20
 
     MDIconButton:
         icon: "delete"
