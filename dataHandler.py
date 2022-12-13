@@ -2,6 +2,7 @@ import time
 import mysql.connector
 import bcrypt
 import sqlite3
+import requests
 
 
 def update_app_data(table_name, column_name, new_data):
@@ -40,9 +41,10 @@ def query_app_data(table_name):
     cursor = db.cursor()
     cursor.execute(f"SELECT * FROM {table_name}")
     data = cursor.fetchall()
-    db.close()
-    for v in data:
-        return v
+    # db.close()
+    # for v in data:
+    #     return v
+    return data
 
 
 def create_app_data():
@@ -462,3 +464,21 @@ def add_cadet_info(infolist):
     c.execute(f"INSERT INTO cadet_application_data VALUES ('Pending',{','.join(sign)})", infolist)
     db.commit()
     db.close()
+
+
+def isValidEmail(email_address):
+    api_key = ""
+    response = requests.get(
+        "https://isitarealemail.com/api/email/validate",
+        params={'email': email_address},
+        headers={'Authorization': "Bearer " + api_key})
+
+    status = response.json()['status']
+    if status == "valid":
+        return True
+    else:
+        return False
+
+# print(query_app_data('cadet_application_data'))
+# print(eval(query_app_data("dynamic_app_data")[0][0]))
+# print(query_app_data('static_app_data')[0][0])

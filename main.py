@@ -27,7 +27,7 @@ dataHandler.create_app_data()  # create static (on device memory) and dynamic (o
 dataHandler.set_database()
 
 under_login_screen = ["AdminDash", "CadetDash", "ApplyCadetScreen", "PasswordRecoveryWindow"]
-under_admin_dash = ["ApplicationFormWindow", "CadetsInfoScreen", "AdminProfile"]
+under_admin_dash = ["ApplicationFormWindow", "CadetsInfoScreen", "AdminProfile", "ViewApplicantScreen"]
 under_cadet_dash = []
 common_screens = ["NoticeScreen", "AboutScreen", "SettingsScreen"]
 
@@ -137,6 +137,11 @@ class LoginScreen(Screen):
             self.manager.get_screen("NoticeScreen").show_notices()
             self.manager.current = "NoticeScreen"
 
+        elif self.manager.current == "ShowApplicantInfoScreen":
+            self.manager.get_screen("ShowApplicantInfoScreen").ids.applicant_info_grid.clear_widgets()
+            self.manager.get_screen("ViewApplicantScreen").show_applicants()
+            self.manager.current = "ViewApplicantScreen"
+
         self.manager.transition.direction = 'right'
 
 
@@ -156,8 +161,8 @@ class PasswordRecoveryWindow(Screen):
 
                 if mail_handler.has_internet():
 
-                    if dataHandler.query_app_data('dynamic_app_data')[1] < 20 and \
-                            dataHandler.query_app_data('dynamic_app_data')[2] < 20:
+                    if dataHandler.query_app_data('dynamic_app_data')[0][1] < 20 and \
+                            dataHandler.query_app_data('dynamic_app_data')[0][2] < 20:
 
                         if not dataHandler.otp_recently_sent([v for v in time.asctime().split(" ") if v != '']):
 
@@ -267,7 +272,7 @@ class ApplyCadetScreen(Screen):
 
     def create_form(self):
 
-        form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0])
+        form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0][0])
         self.textfields = []
         hintText = ''
         for v in form_items:
@@ -296,7 +301,7 @@ class ApplyCadetScreen(Screen):
         new_label = []
         cadet_info_list = []
         if self.form_filled():
-            form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0])
+            form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0][0])
             cadet_cols = [v for v in dataHandler.query_cadet_col_name()]
             for i in form_items:
                 if i.count("'") > 0:
@@ -315,8 +320,21 @@ class ApplyCadetScreen(Screen):
             for v in range(len(cadet_cols)):
                 new_label.insert(v, form_items[form_items.index(cadet_cols[v])])
                 cadet_info_list.insert(v, self.textfields[form_items.index(cadet_cols[v])].text)
-            dataHandler.add_cadet_info(cadet_info_list)
-            toast("Application Form Submitted Successfully!")
+            if dataHandler.isValidEmail(self.textfields[cadet_cols.index('Email')].text):
+                if dataHandler.query_app_data('cadet_application_data'):
+                    if self.textfields[cadet_cols.index('Email')].text not in dataHandler.query_app_data(
+                            'cadet_application_data'):
+                        dataHandler.add_cadet_info(cadet_info_list)
+                        toast("Application Form Submitted Successfully!")
+                    else:
+                        toast("Email already registered!")
+                else:
+                    dataHandler.add_cadet_info(cadet_info_list)
+                    toast("Application Form Submitted Successfully!")
+            else:
+                toast("Email doesn't exist!")
+        else:
+            toast("Please fill up all the information!")
 
 
 class AdminDash(Screen):
@@ -336,7 +354,7 @@ class ApplicationFormWindow(Screen):
             self.ids.edit_application_form.clear_widgets()
 
     def show_form(self):
-        form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0])
+        form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0][0])
         for v in form_items:
             label = MDLabel(text=v, size_hint_x=0.55, halign="center", valign='middle')
             self.ids.edit_application_form.add_widget(label)
@@ -349,7 +367,7 @@ class EditFormItemWindow(Screen):
         Window.bind(on_keyboard=self._key_handler)  # bind screen with keyboard or touch input
         self.item_dropdown_menu = MDDropdownMenu()
 
-        self.form_items_names = eval(dataHandler.query_app_data('dynamic_app_data')[0])
+        self.form_items_names = eval(dataHandler.query_app_data('dynamic_app_data')[0][0])
 
     # handles keyboard/ touch input!
     def _key_handler(self, instance, key, *args):
@@ -383,7 +401,7 @@ class EditFormItemWindow(Screen):
 
     def item_dropdown_(self):  # dropdown menu for form items to select!
 
-        form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0])
+        form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0][0])
 
         if self.ids.add_toggle_btn.state == 'down':
             form_items.pop()
@@ -433,7 +451,7 @@ class EditFormItemWindow(Screen):
 
     def add_item(self):  # add form item to database
 
-        form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0])
+        form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0][0])
         input_text = self.ids.item_name_input.text.split(" ")
 
         # bottom lines format item input text to capitalize first letter of every word and stores in item_name variable!
@@ -462,7 +480,7 @@ class EditFormItemWindow(Screen):
 
                 # this following code clears the self.form_items_name list to update with the newly added item in form
                 self.form_items_names.clear()
-                self.form_items_names = eval(dataHandler.query_app_data("dynamic_app_data")[0])
+                self.form_items_names = eval(dataHandler.query_app_data("dynamic_app_data")[0][0])
 
             else:
                 toast(f'{item_name} is already in the form!')
@@ -599,6 +617,49 @@ class AdminProfile(Screen):
                 toast(f'{v.text} : {v.secondary_text}', duration=3)
 
 
+class ViewApplicantScreen(Screen):
+
+    def __init__(self, **kwargs):
+        super(ViewApplicantScreen, self).__init__(**kwargs)
+        self.applicants_dic = {}
+
+    def show_applicants(self):
+        scroll_view = ScrollView()
+        md_list = MDList()
+
+        applicants = dataHandler.query_app_data('cadet_application_data')
+        if applicants:
+            for applicant in applicants:
+                applicant_item = TwoLineListItem(text=applicant[1], secondary_text=applicant[2],
+                                                 on_release=lambda x: self.view_applicant())
+                applicant_item.id = applicant_item.text
+                self.applicants_dic[applicant_item.id] = applicant_item
+                md_list.add_widget(applicant_item)
+        else:
+            md_list.add_widget(TwoLineListItem(text="No Applicants To Show", secondary_text=''))
+
+        scroll_view.add_widget(md_list)
+        self.add_widget(scroll_view)
+
+    def view_applicant(self):
+        for applicant in self.applicants_dic.values():
+            if applicant.state == 'down':
+                self.manager.get_screen('ShowApplicantInfoScreen').show_applicant(applicant.secondary_text)
+                self.manager.current = 'ShowApplicantInfoScreen'
+
+
+class ShowApplicantInfoScreen(Screen):
+    def show_applicant(self, email):
+        cadet_cols = dataHandler.query_cadet_col_name()
+        cadet_cols.insert(0, "Status")
+        data = [v for v in dataHandler.query_app_data('cadet_application_data') if (email in v)][0]
+        for v in cadet_cols:
+            label = MDLabel(text=f'{v} : ', size_hint_x=0.55)
+            label2 = MDLabel(text=data[cadet_cols.index(v)], size_hint_x=0.45)
+            self.ids.applicant_info_grid.add_widget(label)
+            self.ids.applicant_info_grid.add_widget(label2)
+
+
 class CadetsInfoScreen(Screen):
     pass
 
@@ -706,7 +767,7 @@ class SettingsScreen(Screen):
     def change_theme(self):
 
         app = MainApp()
-        theme_color = dataHandler.query_app_data("static_app_data")[0]
+        theme_color = dataHandler.query_app_data("static_app_data")[0][0]
 
         if theme_color == "Light":
             dataHandler.update_app_data("static_app_data", 'theme_color', 'Dark')
@@ -723,7 +784,7 @@ class MainApp(MDApp):
         self.title = "App By SIS"
         self.theme_cls.primary_palette = "Green"
 
-        theme_color = dataHandler.query_app_data("static_app_data")[0]
+        theme_color = dataHandler.query_app_data("static_app_data")[0][0]
         self.theme_cls.theme_style = theme_color
 
         kvFile = Builder.load_file("app_design.kv")
@@ -731,7 +792,7 @@ class MainApp(MDApp):
         return kvFile
 
     def update_theme(self):
-        theme_color = dataHandler.query_app_data("static_app_data")[0]
+        theme_color = dataHandler.query_app_data("static_app_data")[0][0]
         self.theme_cls.theme_style = theme_color
 
 

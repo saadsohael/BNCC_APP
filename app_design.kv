@@ -5,6 +5,8 @@ WindowManager:
     ApplyCadetScreen:
     AdminDash:
     AdminProfile:
+    ViewApplicantScreen:
+    ShowApplicantInfoScreen:
     CadetsInfoScreen:
     CadetDash:
     AboutScreen:
@@ -130,9 +132,11 @@ WindowManager:
         padding: 20
         pos: (root.width//2 - (self.width//2 - sp(60)), root.height//2 - self.height+sp(90))
         MDRaisedButton:
-            text: "Applicants Information"
+            text: "View Applicants"
             md_bg_color: utils.get_color_from_hex("#3067ddff")
             on_release:
+                root.manager.get_screen("ViewApplicantScreen").show_applicants()
+                root.manager.current = "ViewApplicantScreen"
 
         MDRaisedButton:
             text: "Application Form"
@@ -248,6 +252,7 @@ WindowManager:
         ScrollView:
             MDList:
                 MDGridLayout:
+
                     id: application_form
                     cols: 2
                     size_hint: None, None
@@ -314,11 +319,6 @@ WindowManager:
                     id: admin_profile_photo
                     source : ''
                     pos: (root.width - (self.width+20), root.height - (self.height + 80))
-
-                #MDLabel:
-                    #text: 'asdf'
-                    #pos: admin_profile_photo.pos
-
 
 
     MDNavigationLayout:
@@ -395,6 +395,28 @@ WindowManager:
                             root.manager.get_screen("AdminDash").ids.nav_drawer.status = 'closed'
 
 
+<ViewApplicantScreen>:
+    name: "ViewApplicantScreen"
+
+<ShowApplicantInfoScreen>:
+    name: "ShowApplicantInfoScreen"
+
+    MDBoxLayout:
+        size_hint_y: None
+        height: root.height - sp(25)
+        orientation: 'vertical'
+
+        ScrollView:
+            do_scroll_x: False
+            do_scroll_y: True
+            MDGridLayout:
+                id: applicant_info_grid
+                cols: 2
+                size_hint: None, None
+                size: ((root.width - sp(30)),self.minimum_height)
+                pos_hint_y: 1
+                spacing: 100
+                padding: 55, 25
 
 <CadetsInfoScreen>:
     name: "CadetsInfoScreen"
