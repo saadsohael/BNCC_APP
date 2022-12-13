@@ -1,3 +1,6 @@
-text = 'rockdell420@gmail.com'
-print(' '.join([v.capitalize() for v in text.split(" ")]))
-# print(text.lower())
+dic = {'a': 1, 'b': 2}
+if input() == 'a':
+    print(dic)
+else:
+    dic.clear()
+    print(dic)

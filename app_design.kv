@@ -136,6 +136,8 @@ WindowManager:
             md_bg_color: utils.get_color_from_hex("#3067ddff")
             on_release:
                 root.manager.get_screen("ViewApplicantScreen").clear_widgets()
+                root.manager.get_screen("ViewApplicantScreen").applicants_dic = {}
+                root.manager.get_screen("ViewApplicantScreen").applicant_type = "Pending"
                 root.manager.get_screen("ViewApplicantScreen").show_applicants()
                 root.manager.current = "ViewApplicantScreen"
 
@@ -148,14 +150,20 @@ WindowManager:
 
 
         MDRaisedButton:
-            text: "Post-Selection Criteria"
+            text: "Cadets to be Reviewed"
             md_bg_color: utils.get_color_from_hex("#3067ddff")
             on_release:
+                root.manager.get_screen("ViewApplicantScreen").clear_widgets()
+                root.manager.get_screen("ViewApplicantScreen").applicants_dic = {}
+                root.manager.get_screen("ViewApplicantScreen").applicant_type = "Approved"
+                root.manager.get_screen("ViewApplicantScreen").show_applicants()
+                root.manager.current = "ViewApplicantScreen"
 
         MDRaisedButton:
             text: "Create Notice"
             md_bg_color: utils.get_color_from_hex("#3067ddff")
             on_release:
+                root.manager.get_screen("NoticeScreen").notice_dic = {}
                 root.manager.get_screen("NoticeScreen").show_notices()
                 root.manager.current = "NoticeScreen"
                 nav_drawer.set_state("closed")
@@ -217,6 +225,7 @@ WindowManager:
                     OneLineListItem:
                         text: "Notice Board"
                         on_release:
+                            root.manager.get_screen("NoticeScreen").notice_dic = {}
                             root.manager.get_screen("NoticeScreen").show_notices()
                             root.manager.current = "NoticeScreen"
                             nav_drawer.set_state("closed")
@@ -372,7 +381,11 @@ WindowManager:
                     OneLineListItem:
                         text: "Cadets Info"
                         on_release:
-                            root.manager.current = "CadetsInfoScreen"
+                            root.manager.get_screen("ViewApplicantScreen").clear_widgets()
+                            root.manager.get_screen("ViewApplicantScreen").applicants_dic = {}
+                            root.manager.get_screen("ViewApplicantScreen").applicant_type = "Cadet"
+                            root.manager.get_screen("ViewApplicantScreen").show_applicants()
+                            root.manager.current = "ViewApplicantScreen"
 
                     OneLineListItem:
                         text: "Notice Board"
@@ -417,8 +430,8 @@ WindowManager:
                 size_hint: None, None
                 size: ((root.width - sp(30)),self.minimum_height)
                 pos_hint_y: 1
-                spacing: 100
-                padding: 55, 50
+                spacing: 125
+                padding: 40, 50, 0, 50
 
         MDFloatingActionButtonSpeedDial:
             id: floating_btn
@@ -508,7 +521,7 @@ WindowManager:
         icon_color: app.theme_cls.primary_color
         pos_hint:{'center_x':0.9, 'center_y':0.92}
         on_release:
-            root.delete_notice()
+            root.dialog.open()
 
 <AboutScreen>:
     name: "AboutScreen"

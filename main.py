@@ -122,6 +122,8 @@ class LoginScreen(Screen):
         if self.manager.current in under_login_screen:
             self.manager.current = "LoginScreen"
         elif self.manager.current in under_admin_dash:
+            if self.manager.current == "AdminProfile":
+                self.manager.get_screen("AdminProfile").info_dic.clear()
             self.manager.current = "AdminDash"
         elif self.manager.current in under_cadet_dash:
             self.manager.current = "CadetDash"
@@ -136,13 +138,18 @@ class LoginScreen(Screen):
 
         elif self.manager.current in ["ShowNoticeScreen", "CreateNoticeScreen"]:
             self.manager.get_screen("NoticeScreen").clear_widgets()
+            self.manager.get_screen("NoticeScreen").notice_dic = {}
             self.manager.get_screen("NoticeScreen").show_notices()
             self.manager.current = "NoticeScreen"
 
         elif self.manager.current == "ShowApplicantInfoScreen":
-            self.manager.get_screen("ShowApplicantInfoScreen").ids.applicant_info_grid.clear_widgets()
-            self.manager.get_screen("ViewApplicantScreen").show_applicants()
-            self.manager.current = "ViewApplicantScreen"
+            if self.manager.get_screen("ShowApplicantInfoScreen").ids.floating_btn.state == 'close':
+                self.manager.get_screen("ShowApplicantInfoScreen").ids.applicant_info_grid.clear_widgets()
+                self.manager.get_screen("ViewApplicantScreen").applicants_dic = {}
+                self.manager.get_screen("ViewApplicantScreen").show_applicants()
+                self.manager.current = "ViewApplicantScreen"
+            else:
+                self.manager.get_screen("ShowApplicantInfoScreen").ids.floating_btn.close_stack()
 
         self.manager.transition.direction = 'right'
 
@@ -634,18 +641,20 @@ class ViewApplicantScreen(Screen):
 
     def __init__(self, **kwargs):
         super(ViewApplicantScreen, self).__init__(**kwargs)
+        self.applicant_type = "Pending"
         self.applicants_dic = {}
 
     def show_applicants(self):
         scroll_view = ScrollView()
         md_list = MDList()
-
-        applicants = dataHandler.query_app_data("*", "cadet_application_data")
+        applicants = dataHandler.query_app_data("*", "cadet_application_data", "Status", self.applicant_type)
         if applicants:
             for applicant in applicants:
                 applicant_item = TwoLineListItem(
-                    text=dataHandler.query_app_data('Name', 'cadet_application_data')[applicants.index(applicant)][0],
-                    secondary_text=dataHandler.query_app_data('Email', 'cadet_application_data')[
+                    text=dataHandler.query_app_data('Name', 'cadet_application_data', "Status", self.applicant_type)[
+                        applicants.index(applicant)][0],
+                    secondary_text=
+                    dataHandler.query_app_data('Email', 'cadet_application_data', "Status", self.applicant_type)[
                         applicants.index(applicant)][0],
                     on_release=lambda x: self.view_applicant())
                 applicant_item.id = applicant_item.text
@@ -660,6 +669,23 @@ class ViewApplicantScreen(Screen):
     def view_applicant(self):
         for applicant in self.applicants_dic.values():
             if applicant.state == 'down':
+                if self.applicant_type == "Approved":
+                    self.manager.get_screen('ShowApplicantInfoScreen').data = {
+                        'Make Cadet': 'check',
+                        'Remove Cadet': 'delete',
+                        'Cancel': 'close',
+                    }
+                    self.manager.get_screen('ShowApplicantInfoScreen').ids.floating_btn.data = self.manager.get_screen(
+                        'ShowApplicantInfoScreen').data
+                else:
+                    self.manager.get_screen('ShowApplicantInfoScreen').data = {
+                        'Approve Application': 'check',
+                        'Remove Application': 'delete',
+                        'Cancel': 'close',
+                    }
+                    self.manager.get_screen('ShowApplicantInfoScreen').ids.floating_btn.data = self.manager.get_screen(
+                        'ShowApplicantInfoScreen').data
+
                 self.manager.get_screen('ShowApplicantInfoScreen').cadet_email_address = applicant.secondary_text
                 self.manager.get_screen('ShowApplicantInfoScreen').show_applicant(applicant.secondary_text)
                 self.manager.get_screen('ShowApplicantInfoScreen').ids.floating_btn.close_stack()
@@ -691,18 +717,30 @@ class ShowApplicantInfoScreen(Screen):
         data = [v for v in dataHandler.query_app_data("*", "cadet_application_data") if (email in v)][0]
         for v in cadet_cols:
             label = MDLabel(text=f'{v} : ', size_hint_x=0.55)
-            label2 = MDLabel(text=data[cadet_cols.index(v)], size_hint_x=0.45)
+            if v == "Height":
+                label2 = MDLabel(text=f"{data[cadet_cols.index(v)]} inch", size_hint_x=0.45)
+            elif v == "Weight":
+                label2 = MDLabel(text=f"{data[cadet_cols.index(v)]} kg", size_hint_x=0.45)
+            else:
+                label2 = MDLabel(text=data[cadet_cols.index(v)], size_hint_x=0.45)
             self.ids.applicant_info_grid.add_widget(label)
             self.ids.applicant_info_grid.add_widget(label2)
 
     def callback(self, instance):
         if instance.icon == 'check':
-            dataHandler.update_app_data('cadet_application_data', 'Status', 'Approved', 'Email',
-                                        self.cadet_email_address)
+            if self.applicant_type == "Pending":
+                dataHandler.update_app_data('cadet_application_data', 'Status', 'Approved', 'Email',
+                                            self.cadet_email_address)
+                toast("Cadet Application Approved!")
+
+            else:
+                dataHandler.update_app_data('cadet_application_data', 'Status', 'Cadet', 'Email',
+                                            self.cadet_email_address)
+                toast("Cadet Status Updated!")
             self.manager.current = "ViewApplicantScreen"
+            self.manager.get_screen("ViewApplicantScreen").applicants_dic = {}
             self.manager.get_screen("ViewApplicantScreen").show_applicants()
             self.ids.applicant_info_grid.clear_widgets()
-            toast("Cadet Application Approved!")
 
         elif instance.icon == 'delete':
             self.dialog.open()
@@ -712,6 +750,7 @@ class ShowApplicantInfoScreen(Screen):
 
     def remove_item(self, instance):
         dataHandler.delete_query('cadet_application_data', 'Email', self.cadet_email_address)
+        self.manager.get_screen("ViewApplicantScreen").applicants_dic = {}
         self.manager.get_screen("ViewApplicantScreen").show_applicants()
         self.manager.current = "ViewApplicantScreen"
         self.ids.applicant_info_grid.clear_widgets()
@@ -777,22 +816,35 @@ class NoticeScreen(Screen):
 class ShowNoticeScreen(Screen):
     def __init__(self, **kwargs):
         super(ShowNoticeScreen, self).__init__(**kwargs)
+
         self.title = ''
         self.text = ''
+        self.dialog = MDDialog(title="Are You Sure You Want To Delte This Notice?",
+                               size_hint=(None, None),
+                               _spacer_top=sp(15),
+                               width=(self.width - sp(50)),
+                               buttons=[MDFlatButton(text='Yes', on_release=self.delete_notice),
+                                        MDFlatButton(text='No', on_release=self.close_dialog)]
+                               )
 
     def view_notice(self):
         self.ids.notice_title.text = self.title
         self.ids.notice_text.text = self.text
 
-    def delete_notice(self):
+    def delete_notice(self, instance):
         dataHandler.delete_query('notice_board', 'Notice_Title', self.ids.notice_title.text)
         self.title = dataHandler.fetch_notices()[-1][0]
         self.text = dataHandler.fetch_notices()[-1][1]
         self.manager.get_screen("NoticeScreen").notice_dic = {}
         self.manager.get_screen("NoticeScreen").clear_widgets()
+        self.manager.get_screen("NoticeScreen").notice_dic = {}
         self.manager.get_screen("NoticeScreen").show_notices()
         self.manager.current = "NoticeScreen"
         toast("Notice Deleted Successfully")
+        self.dialog.dismiss()
+
+    def close_dialog(self, instance):
+        self.dialog.dismiss()
 
 
 class CreateNoticeScreen(Screen):

@@ -508,4 +508,3 @@ def isValidEmail(email_address):
         return True
     else:
         return False
-
