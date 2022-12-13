@@ -5,13 +5,64 @@ import sqlite3
 import requests
 
 
-def update_app_data(table_name, column_name, new_data):
+def primary_form_items():
+    form_items = ["Name",
+                  "Email",
+                  "Father's Name",
+                  "Mother's Name",
+                  "Permanent Address",
+                  "Height",
+                  "Weight",
+                  "Date Of Birth"]
+    return form_items
+
+
+def update_app_data(table_name, column_name, new_data, where=None, condition=None):
+    if condition is None:
+        if table_name == 'static_app_data':
+            db = sqlite3.connect("app_data.db")
+            cursor = db.cursor()
+
+            cursor.execute(f"UPDATE {table_name} SET {column_name} = (?)", (new_data,))
+            db.commit()
+        else:
+            db = mysql.connector.connect(
+                host="localhost",
+                user="root",
+                passwd="saad1122002",
+                database="first_db"
+            )
+            cursor = db.cursor()
+
+            cursor.execute(f"UPDATE {table_name} SET {column_name} = (%s)", (new_data,))
+            db.commit()
+
+        db.close()
+    else:
+        if table_name == 'static_app_data':
+            db = sqlite3.connect("app_data.db")
+            cursor = db.cursor()
+
+            cursor.execute(f"UPDATE {table_name} SET {column_name} = (?) WHERE {where} = (?)", (new_data, condition))
+            db.commit()
+        else:
+            db = mysql.connector.connect(
+                host="localhost",
+                user="root",
+                passwd="saad1122002",
+                database="first_db"
+            )
+            cursor = db.cursor()
+
+            cursor.execute(f"UPDATE {table_name} SET {column_name} = (%s) WHERE {where} = (%s)", (new_data, condition))
+            db.commit()
+
+        db.close()
+
+
+def query_app_data(query, table_name, where=None, condition=None):
     if table_name == 'static_app_data':
         db = sqlite3.connect("app_data.db")
-        cursor = db.cursor()
-
-        cursor.execute(f"UPDATE {table_name} SET {column_name} = (?)", (new_data,))
-        db.commit()
     else:
         db = mysql.connector.connect(
             host="localhost",
@@ -19,31 +70,18 @@ def update_app_data(table_name, column_name, new_data):
             passwd="saad1122002",
             database="first_db"
         )
-        cursor = db.cursor()
-
-        cursor.execute(f"UPDATE {table_name} SET {column_name} = (%s)", (new_data,))
-        db.commit()
-
-    db.close()
-
-
-def query_app_data(table_name):
-    if table_name == 'static_app_data':
-        db = sqlite3.connect("app_data.db")
-    else:
-        db = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            passwd="saad1122002",
-            database="first_db"
-        )
-
     cursor = db.cursor()
-    cursor.execute(f"SELECT * FROM {table_name}")
+
+    if condition is None:
+        cursor.execute(f"SELECT {query} FROM {table_name}")
+
+    else:
+        if table_name == 'static_app_data':
+            cursor.execute(f"SELECT {query} FROM {table_name} WHERE {where} = (?)", (condition,))
+        else:
+            cursor.execute(f"SELECT {query} FROM {table_name} WHERE {where} = (%s)", (condition,))
+
     data = cursor.fetchall()
-    # db.close()
-    # for v in data:
-    #     return v
     return data
 
 
@@ -73,15 +111,7 @@ def create_app_data():
         database="first_db"
     )
 
-    form_items = ["Name",
-                  "Email",
-                  "Father's Name",
-                  "Mother's Name",
-                  "Permanent Address",
-                  "Height",
-                  "Weight",
-                  "Blood Group"]
-    primary_application_form = repr(form_items)
+    primary_application_form = repr(primary_form_items())
 
     c = online_db.cursor()
     c.execute("""CREATE TABLE IF NOT EXISTS dynamic_app_data(
@@ -107,7 +137,7 @@ def create_app_data():
     online_db.commit()
 
     existing_cadet_form_items = query_cadet_col_name()
-    for item in form_items:
+    for item in primary_form_items():
         if item.count("'") > 0:
             temp_list = []
             for i in item.split(" "):
@@ -439,7 +469,7 @@ def fetch_notices():
         return [('No Notices', '')]
 
 
-def delete_notice(title):
+def delete_query(table_name, where, condition):
     db = mysql.connector.connect(
         host="localhost",
         user="root",
@@ -447,7 +477,7 @@ def delete_notice(title):
         database="first_db"
     )
     c = db.cursor()
-    c.execute("DELETE FROM notice_board WHERE Notice_Title = (%s)", (title,))
+    c.execute(f"DELETE FROM {table_name} WHERE {where} = (%s)", (condition,))
     db.commit()
     db.close()
 
@@ -479,6 +509,3 @@ def isValidEmail(email_address):
     else:
         return False
 
-# print(query_app_data('cadet_application_data'))
-# print(eval(query_app_data("dynamic_app_data")[0][0]))
-# print(query_app_data('static_app_data')[0][0])

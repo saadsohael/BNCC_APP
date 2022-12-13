@@ -83,7 +83,8 @@ class LoginScreen(Screen):
 
         self.dialog = MDDialog(title=title,
                                size_hint=(None, None),
-                               width=(self.width - sp(50)),
+                               _spacer_top=sp(15),
+                               width=(self.width - sp(80)),
                                buttons=[MDFlatButton(text='Yes', on_release=self.confirm_yes),
                                         MDFlatButton(text='No', on_release=self.close_dialog)]
                                )
@@ -107,6 +108,7 @@ class LoginScreen(Screen):
     def show_wrong_credentials(self, text):
         self.dialog_box = MDDialog(title=text,
                                    size_hint=(None, None),
+                                   _spacer_top=sp(15),
                                    width=(self.width - sp(50)),
                                    buttons=[MDFlatButton(text='Dismiss', on_release=self.DISMISS_DIALOG_BOX)])
         self.dialog_box.open()
@@ -161,8 +163,8 @@ class PasswordRecoveryWindow(Screen):
 
                 if mail_handler.has_internet():
 
-                    if dataHandler.query_app_data('dynamic_app_data')[0][1] < 20 and \
-                            dataHandler.query_app_data('dynamic_app_data')[0][2] < 20:
+                    if dataHandler.query_app_data("*", "dynamic_app_data")[0][1] < 20 and \
+                            dataHandler.query_app_data("*", "dynamic_app_data")[0][2] < 20:
 
                         if not dataHandler.otp_recently_sent([v for v in time.asctime().split(" ") if v != '']):
 
@@ -202,6 +204,7 @@ class PasswordRecoveryWindow(Screen):
 
         self.dialog = MDDialog(title=title,
                                size_hint=(None, None),
+                               _spacer_top=sp(15),
                                width=(self.width - sp(50)),
                                buttons=[MDFlatButton(text='Dismiss', on_release=self.close_dialog)])
         self.dialog.open()
@@ -272,7 +275,7 @@ class ApplyCadetScreen(Screen):
 
     def create_form(self):
 
-        form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0][0])
+        form_items = eval(dataHandler.query_app_data("*", "dynamic_app_data")[0][0])
         self.textfields = []
         hintText = ''
         for v in form_items:
@@ -301,7 +304,7 @@ class ApplyCadetScreen(Screen):
         new_label = []
         cadet_info_list = []
         if self.form_filled():
-            form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0][0])
+            form_items = eval(dataHandler.query_app_data("*", "dynamic_app_data")[0][0])
             cadet_cols = [v for v in dataHandler.query_cadet_col_name()]
             for i in form_items:
                 if i.count("'") > 0:
@@ -319,11 +322,15 @@ class ApplyCadetScreen(Screen):
                         form_items.remove(i)
             for v in range(len(cadet_cols)):
                 new_label.insert(v, form_items[form_items.index(cadet_cols[v])])
-                cadet_info_list.insert(v, self.textfields[form_items.index(cadet_cols[v])].text)
+                if cadet_cols[v] != 'Email':
+                    cadet_info_list.insert(v, ' '.join(
+                        [v.capitalize() for v in self.textfields[form_items.index(cadet_cols[v])].text.split(" ")]))
+                else:
+                    cadet_info_list.insert(v, self.textfields[form_items.index(cadet_cols[v])].text)
             if dataHandler.isValidEmail(self.textfields[cadet_cols.index('Email')].text):
-                if dataHandler.query_app_data('cadet_application_data'):
-                    if self.textfields[cadet_cols.index('Email')].text not in dataHandler.query_app_data(
-                            'cadet_application_data'):
+                if dataHandler.query_app_data("*", "cadet_application_data"):
+                    existing_emails = [v[0] for v in dataHandler.query_app_data("Email", "cadet_application_data")]
+                    if self.textfields[cadet_cols.index('Email')].text not in existing_emails:
                         dataHandler.add_cadet_info(cadet_info_list)
                         toast("Application Form Submitted Successfully!")
                     else:
@@ -354,7 +361,7 @@ class ApplicationFormWindow(Screen):
             self.ids.edit_application_form.clear_widgets()
 
     def show_form(self):
-        form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0][0])
+        form_items = eval(dataHandler.query_app_data("*", "dynamic_app_data")[0][0])
         for v in form_items:
             label = MDLabel(text=v, size_hint_x=0.55, halign="center", valign='middle')
             self.ids.edit_application_form.add_widget(label)
@@ -367,7 +374,7 @@ class EditFormItemWindow(Screen):
         Window.bind(on_keyboard=self._key_handler)  # bind screen with keyboard or touch input
         self.item_dropdown_menu = MDDropdownMenu()
 
-        self.form_items_names = eval(dataHandler.query_app_data('dynamic_app_data')[0][0])
+        self.form_items_names = eval(dataHandler.query_app_data("*", "dynamic_app_data")[0][0])
 
     # handles keyboard/ touch input!
     def _key_handler(self, instance, key, *args):
@@ -401,7 +408,7 @@ class EditFormItemWindow(Screen):
 
     def item_dropdown_(self):  # dropdown menu for form items to select!
 
-        form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0][0])
+        form_items = eval(dataHandler.query_app_data("*", "dynamic_app_data")[0][0])
 
         if self.ids.add_toggle_btn.state == 'down':
             form_items.pop()
@@ -423,11 +430,12 @@ class EditFormItemWindow(Screen):
 
             # if user is editing or removing items or doing nothing
             else:
-                # elif self.ids.edit_toggle_btn.state == 'down':
-                item_dropdown_list.append(v)
+                if self.ids.add_or_edit_btn.text == "Remove Item":
+                    if v not in dataHandler.primary_form_items():
+                        item_dropdown_list.append(v)
+                else:
+                    item_dropdown_list.append(v)
 
-            # elif self.ids.edit_toggle_btn.disabled and self.ids.add_toggle_btn.disabled:
-            #     item_dropdown_list.append(' '.join([i for i in v.split(" ") if i != ':']))
         item_dropdown_list = [
             {
                 "viewclass": "OneLineListItem",
@@ -451,7 +459,7 @@ class EditFormItemWindow(Screen):
 
     def add_item(self):  # add form item to database
 
-        form_items = eval(dataHandler.query_app_data("dynamic_app_data")[0][0])
+        form_items = eval(dataHandler.query_app_data("*", "dynamic_app_data")[0][0])
         input_text = self.ids.item_name_input.text.split(" ")
 
         # bottom lines format item input text to capitalize first letter of every word and stores in item_name variable!
@@ -480,7 +488,7 @@ class EditFormItemWindow(Screen):
 
                 # this following code clears the self.form_items_name list to update with the newly added item in form
                 self.form_items_names.clear()
-                self.form_items_names = eval(dataHandler.query_app_data("dynamic_app_data")[0][0])
+                self.form_items_names = eval(dataHandler.query_app_data("*", "dynamic_app_data")[0][0])
 
             else:
                 toast(f'{item_name} is already in the form!')
@@ -551,6 +559,7 @@ class EditFormItemWindow(Screen):
         self.dialog = MDDialog(title="Are You Sure You Want To Remove"
                                      f"\n{self.ids.drop_item.text} from Application Form?",
                                size_hint=(None, None),
+                               _spacer_top=sp(15),
                                width=(self.width - sp(50)),
                                buttons=[MDFlatButton(text='Yes', on_release=self.remove_item),
                                         MDFlatButton(text='No', on_release=self.close_dialog)]
@@ -558,23 +567,27 @@ class EditFormItemWindow(Screen):
         self.dialog.open()
 
     def remove_item(self, instance):
-        if self.ids.drop_item.text.count("'") > 0:
-            temp_list = []
-            for i in self.ids.drop_item.text.split(" "):
-                if i.count("'") > 0:
-                    temp_list.append(i.split("'")[0])
-                else:
-                    temp_list.append(i)
-            dataHandler.drop_column('cadet_application_data', '_'.join(temp_list))
+        if self.ids.drop_item.text not in dataHandler.primary_form_items():
+            if self.ids.drop_item.text.count("'") > 0:
+                temp_list = []
+                for i in self.ids.drop_item.text.split(" "):
+                    if i.count("'") > 0:
+                        temp_list.append(i.split("'")[0])
+                    else:
+                        temp_list.append(i)
+                dataHandler.drop_column('cadet_application_data', '_'.join(temp_list))
 
+            else:
+                dataHandler.drop_column('cadet_application_data', '_'.join(self.ids.drop_item.text.split(" ")))
+
+            self.form_items_names.remove(self.ids.drop_item.text)
+            updated_form_items_list = [v for v in self.form_items_names]
+            dataHandler.update_app_data("dynamic_app_data", "application_form", repr(updated_form_items_list))
+            toast(f"{self.ids.drop_item.text} removed from Application Form")
+            self.ids.drop_item.text = self.form_items_names[0]
+            self.dialog.dismiss()
         else:
-            dataHandler.drop_column('cadet_application_data', '_'.join(self.ids.drop_item.text.split(" ")))
-        self.form_items_names.remove(self.ids.drop_item.text)
-        updated_form_items_list = [v for v in self.form_items_names]
-        dataHandler.update_app_data("dynamic_app_data", "application_form", repr(updated_form_items_list))
-        toast(f"{self.ids.drop_item.text} removed from Application Form")
-        self.ids.drop_item.text = self.form_items_names[0]
-        self.dialog.dismiss()
+            toast("Cannot Delete Primary Form Item!")
 
     def do_stuffs(self):
 
@@ -627,11 +640,14 @@ class ViewApplicantScreen(Screen):
         scroll_view = ScrollView()
         md_list = MDList()
 
-        applicants = dataHandler.query_app_data('cadet_application_data')
+        applicants = dataHandler.query_app_data("*", "cadet_application_data")
         if applicants:
             for applicant in applicants:
-                applicant_item = TwoLineListItem(text=applicant[1], secondary_text=applicant[2],
-                                                 on_release=lambda x: self.view_applicant())
+                applicant_item = TwoLineListItem(
+                    text=dataHandler.query_app_data('Name', 'cadet_application_data')[applicants.index(applicant)][0],
+                    secondary_text=dataHandler.query_app_data('Email', 'cadet_application_data')[
+                        applicants.index(applicant)][0],
+                    on_release=lambda x: self.view_applicant())
                 applicant_item.id = applicant_item.text
                 self.applicants_dic[applicant_item.id] = applicant_item
                 md_list.add_widget(applicant_item)
@@ -644,20 +660,72 @@ class ViewApplicantScreen(Screen):
     def view_applicant(self):
         for applicant in self.applicants_dic.values():
             if applicant.state == 'down':
+                self.manager.get_screen('ShowApplicantInfoScreen').cadet_email_address = applicant.secondary_text
                 self.manager.get_screen('ShowApplicantInfoScreen').show_applicant(applicant.secondary_text)
+                self.manager.get_screen('ShowApplicantInfoScreen').ids.floating_btn.close_stack()
                 self.manager.current = 'ShowApplicantInfoScreen'
+                self.clear_widgets()
 
 
 class ShowApplicantInfoScreen(Screen):
+    def __init__(self, **kwargs):
+        super(ShowApplicantInfoScreen, self).__init__(**kwargs)
+
+        self.cadet_email_address = ''
+        self.dialog = MDDialog(title="Are You Sure You Want To Remove This Applicant?",
+                               size_hint=(None, None),
+                               _spacer_top=sp(15),
+                               width=(self.width - sp(50)),
+                               buttons=[MDFlatButton(text='Yes', on_release=self.remove_item),
+                                        MDFlatButton(text='No', on_release=self.close_dialog)]
+                               )
+        self.data = {
+            'Approve Application': 'check',
+            'Remove Application': 'delete',
+            'Cancel': 'close',
+        }
+
     def show_applicant(self, email):
         cadet_cols = dataHandler.query_cadet_col_name()
         cadet_cols.insert(0, "Status")
-        data = [v for v in dataHandler.query_app_data('cadet_application_data') if (email in v)][0]
+        data = [v for v in dataHandler.query_app_data("*", "cadet_application_data") if (email in v)][0]
         for v in cadet_cols:
             label = MDLabel(text=f'{v} : ', size_hint_x=0.55)
             label2 = MDLabel(text=data[cadet_cols.index(v)], size_hint_x=0.45)
             self.ids.applicant_info_grid.add_widget(label)
             self.ids.applicant_info_grid.add_widget(label2)
+
+    def callback(self, instance):
+        if instance.icon == 'check':
+            dataHandler.update_app_data('cadet_application_data', 'Status', 'Approved', 'Email',
+                                        self.cadet_email_address)
+            self.manager.current = "ViewApplicantScreen"
+            self.manager.get_screen("ViewApplicantScreen").show_applicants()
+            self.ids.applicant_info_grid.clear_widgets()
+            toast("Cadet Application Approved!")
+
+        elif instance.icon == 'delete':
+            self.dialog.open()
+
+        else:
+            self.ids.floating_btn.close_stack()
+
+    def remove_item(self, instance):
+        dataHandler.delete_query('cadet_application_data', 'Email', self.cadet_email_address)
+        self.manager.get_screen("ViewApplicantScreen").show_applicants()
+        self.manager.current = "ViewApplicantScreen"
+        self.ids.applicant_info_grid.clear_widgets()
+        toast("Cadet Application Approved!")
+        self.dialog.dismiss()
+
+    def close_dialog(self, instance):
+        self.dialog.dismiss()
+
+    def open(self):
+        self.ids.floating_btn.size_hint_y = 1.2
+
+    def close(self):
+        self.ids.floating_btn.size_hint_y = 0.2
 
 
 class CadetsInfoScreen(Screen):
@@ -717,7 +785,7 @@ class ShowNoticeScreen(Screen):
         self.ids.notice_text.text = self.text
 
     def delete_notice(self):
-        dataHandler.delete_notice(self.ids.notice_title.text)
+        dataHandler.delete_query('notice_board', 'Notice_Title', self.ids.notice_title.text)
         self.title = dataHandler.fetch_notices()[-1][0]
         self.text = dataHandler.fetch_notices()[-1][1]
         self.manager.get_screen("NoticeScreen").notice_dic = {}
@@ -767,7 +835,7 @@ class SettingsScreen(Screen):
     def change_theme(self):
 
         app = MainApp()
-        theme_color = dataHandler.query_app_data("static_app_data")[0][0]
+        theme_color = dataHandler.query_app_data("*", "static_app_data")[0][0]
 
         if theme_color == "Light":
             dataHandler.update_app_data("static_app_data", 'theme_color', 'Dark')
@@ -779,12 +847,11 @@ class SettingsScreen(Screen):
 
 
 class MainApp(MDApp):
-
     def build(self):
         self.title = "App By SIS"
         self.theme_cls.primary_palette = "Green"
 
-        theme_color = dataHandler.query_app_data("static_app_data")[0][0]
+        theme_color = dataHandler.query_app_data("*", "static_app_data")[0][0]
         self.theme_cls.theme_style = theme_color
 
         kvFile = Builder.load_file("app_design.kv")
@@ -792,7 +859,7 @@ class MainApp(MDApp):
         return kvFile
 
     def update_theme(self):
-        theme_color = dataHandler.query_app_data("static_app_data")[0][0]
+        theme_color = dataHandler.query_app_data("*", "static_app_data")[0][0]
         self.theme_cls.theme_style = theme_color
 
 

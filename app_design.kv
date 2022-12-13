@@ -135,6 +135,7 @@ WindowManager:
             text: "View Applicants"
             md_bg_color: utils.get_color_from_hex("#3067ddff")
             on_release:
+                root.manager.get_screen("ViewApplicantScreen").clear_widgets()
                 root.manager.get_screen("ViewApplicantScreen").show_applicants()
                 root.manager.current = "ViewApplicantScreen"
 
@@ -402,6 +403,7 @@ WindowManager:
     name: "ShowApplicantInfoScreen"
 
     MDBoxLayout:
+        id: applicant_info_box
         size_hint_y: None
         height: root.height - sp(25)
         orientation: 'vertical'
@@ -416,7 +418,16 @@ WindowManager:
                 size: ((root.width - sp(30)),self.minimum_height)
                 pos_hint_y: 1
                 spacing: 100
-                padding: 55, 25
+                padding: 55, 50
+
+        MDFloatingActionButtonSpeedDial:
+            id: floating_btn
+            data: root.data
+            size_hint_y: 0.2
+            root_button_anim: True
+            callback: root.callback
+            on_open: root.open()
+            on_close: root.close()
 
 <CadetsInfoScreen>:
     name: "CadetsInfoScreen"

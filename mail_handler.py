@@ -32,7 +32,7 @@ def send_pass_recovery_otp(toaddr):
     msg = MIMEMultipart()
 
     # storing the senders email address
-    if dataHandler.query_app_data('dynamic_app_data')[1] < 20:
+    if dataHandler.query_app_data("*","dynamic_app_data")[1] < 20:
         fromaddr = 'otp.manager1971@gmail.com'
         password = "qciibqknolujaalp"
     else:
