@@ -1,21 +1,22 @@
 import io
 import time
 import webbrowser
+from random import randint
+import admin
+import dataHandler
+import mail_handler
 from kivy.uix.scrollview import ScrollView
 from kivymd.app import MDApp
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.lang import Builder
 from kivymd.toast import toast
-from kivymd.uix.button import MDFlatButton, MDRaisedButton, MDFloatingActionButton, MDIconButton
+from kivymd.uix.button import MDFlatButton, MDRaisedButton, MDFloatingActionButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.label import MDLabel
 from kivymd.uix.list import TwoLineListItem, MDList
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.textfield import MDTextField
 from kivy.metrics import sp
-import admin
-import dataHandler
-import mail_handler
 from kivy.animation import Animation
 from kivy.properties import NumericProperty
 from kivy.uix.image import CoreImage
@@ -293,7 +294,7 @@ class ApplyCadetScreen(Screen):
             if v == 'Weight':
                 hintText = 'in kg'
             if v == 'Cadet Id':
-                hintText = 'id will be auto generated'
+                hintText = 'id auto generated'
 
             label = MDLabel(text=f'{v} : ', size_hint_x=0.55)
             if v == 'Cadet Id':
@@ -308,13 +309,23 @@ class ApplyCadetScreen(Screen):
 
     def form_filled(self):
         for input_box in self.textfields:
-            if input_box.text == '' or input_box.text.isspace():
-                return False
+            if input_box.hint_text != 'id auto generated':
+                if input_box.text == '' or input_box.text.isspace():
+                    return False
         return True
 
     def confirm_apply_btn(self):
         new_label = []
         cadet_info_list = []
+        temp_list = []
+        if dataHandler.query_app_data('Cadet_Id', 'cadet_application_data'):
+            temp_list = [v[0] for v in dataHandler.query_app_data('Cadet_Id', 'cadet_application_data')]
+        unique_id = randint(100001, 199999)
+        if unique_id in temp_list:
+            while unique_id in temp_list:
+                unique_id = randint(100001, 199999)
+        temp_list.append(unique_id)
+        cadet_unique_id = str(temp_list[-1])
         if self.form_filled():
             form_items = eval(dataHandler.query_app_data("*", "dynamic_app_data")[0][0])
             cadet_cols = [v for v in dataHandler.query_cadet_col_name()]
@@ -334,11 +345,14 @@ class ApplyCadetScreen(Screen):
                         form_items.remove(i)
             for v in range(len(cadet_cols)):
                 new_label.insert(v, form_items[form_items.index(cadet_cols[v])])
-                if cadet_cols[v] not in ['Email', 'Facebook_Id']:
-                    cadet_info_list.insert(v, ' '.join(
-                        [v.capitalize() for v in self.textfields[form_items.index(cadet_cols[v])].text.split(" ")]))
+                if cadet_cols[v] != 'Cadet_Id':
+                    if cadet_cols[v] not in ['Email', 'Facebook_Id']:
+                        cadet_info_list.insert(v, ' '.join(
+                            [v.capitalize() for v in self.textfields[form_items.index(cadet_cols[v])].text.split(" ")]))
+                    else:
+                        cadet_info_list.insert(v, self.textfields[form_items.index(cadet_cols[v])].text)
                 else:
-                    cadet_info_list.insert(v, self.textfields[form_items.index(cadet_cols[v])].text)
+                    cadet_info_list.insert(v, cadet_unique_id)
             if dataHandler.isValidEmail(self.textfields[cadet_cols.index('Email')].text):
                 if dataHandler.query_app_data("*", "cadet_application_data"):
                     existing_emails = [v[0] for v in dataHandler.query_app_data("Email", "cadet_application_data")]
