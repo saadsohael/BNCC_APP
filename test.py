@@ -1,6 +1,8 @@
-dic = {'a': 1, 'b': 2}
-if input() == 'a':
-    print(dic)
-else:
-    dic.clear()
-    print(dic)
+import dataHandler
+
+text1 = 'www.m.me/isaadsohael'
+text2 = 'www.facebook.com/isaadsohael'
+text3 = 'facebook.com/isaadsohael'
+
+print(f'')
+

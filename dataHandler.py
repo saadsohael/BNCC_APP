@@ -6,14 +6,16 @@ import requests
 
 
 def primary_form_items():
-    form_items = ["Name",
+    form_items = ["Cadet Id",
+                  "Name",
                   "Email",
                   "Father's Name",
                   "Mother's Name",
                   "Permanent Address",
                   "Height",
                   "Weight",
-                  "Date Of Birth"]
+                  "Date Of Birth",
+                  "Facebook Id"]
     return form_items
 
 
@@ -387,7 +389,7 @@ def set_database():
         update_otp_counter('reset')
 
 
-def add_column(table_name, new_col_name):
+def add_column(table_name, new_col_name, default):
     db = mysql.connector.connect(
         host="localhost",
         user="root",
@@ -408,7 +410,8 @@ def add_column(table_name, new_col_name):
         else:
             new_col_name = '_'.join(new_col_name.split(" "))
         if new_col_name not in existing_col_names:
-            c.execute(f"ALTER TABLE cadet_application_data ADD COLUMN ({new_col_name} VARCHAR(255))")
+            c.execute(f"ALTER TABLE cadet_application_data ADD COLUMN ({new_col_name} VARCHAR(255) DEFAULT (%s))",
+                      (default,))
     else:
         c.execute(f"ALTER TABLE {table_name} ADD COLUMN ({new_col_name} VARCHAR(255))")
     db.commit()

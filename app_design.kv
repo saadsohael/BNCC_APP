@@ -219,8 +219,11 @@ WindowManager:
                     OneLineListItem:
                         text: "Cadets Info"
                         on_release:
-                            root.manager.current = "CadetsInfoScreen"
-                            nav_drawer.set_state("closed")
+                            root.manager.get_screen("ViewApplicantScreen").clear_widgets()
+                            root.manager.get_screen("ViewApplicantScreen").applicants_dic = {}
+                            root.manager.get_screen("ViewApplicantScreen").applicant_type = "Cadet"
+                            root.manager.get_screen("ViewApplicantScreen").show_applicants()
+                            root.manager.current = "ViewApplicantScreen"
 
                     OneLineListItem:
                         text: "Notice Board"

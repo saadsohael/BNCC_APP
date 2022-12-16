@@ -6,7 +6,7 @@ from kivymd.app import MDApp
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.lang import Builder
 from kivymd.toast import toast
-from kivymd.uix.button import MDFlatButton, MDRaisedButton, MDFloatingActionButton
+from kivymd.uix.button import MDFlatButton, MDRaisedButton, MDFloatingActionButton, MDIconButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.label import MDLabel
 from kivymd.uix.list import TwoLineListItem, MDList
@@ -292,9 +292,14 @@ class ApplyCadetScreen(Screen):
                 hintText = 'in inch'
             if v == 'Weight':
                 hintText = 'in kg'
+            if v == 'Cadet Id':
+                hintText = 'id will be auto generated'
 
             label = MDLabel(text=f'{v} : ', size_hint_x=0.55)
-            textfield = MDTextField(mode="rectangle", size_hint_x=0.45, hint_text=hintText)
+            if v == 'Cadet Id':
+                textfield = MDTextField(mode="rectangle", size_hint_x=0.45, hint_text=hintText, disabled=True)
+            else:
+                textfield = MDTextField(mode="rectangle", size_hint_x=0.45, hint_text=hintText)
             self.textfields.append(textfield)
             self.ids.application_form.add_widget(label)
             self.ids.application_form.add_widget(textfield)
@@ -329,7 +334,7 @@ class ApplyCadetScreen(Screen):
                         form_items.remove(i)
             for v in range(len(cadet_cols)):
                 new_label.insert(v, form_items[form_items.index(cadet_cols[v])])
-                if cadet_cols[v] != 'Email':
+                if cadet_cols[v] not in ['Email', 'Facebook_Id']:
                     cadet_info_list.insert(v, ' '.join(
                         [v.capitalize() for v in self.textfields[form_items.index(cadet_cols[v])].text.split(" ")]))
                 else:
@@ -487,7 +492,7 @@ class EditFormItemWindow(Screen):
                     form_items.insert(index_, item_name)  # inserts new item after the selected dropdown item
 
                 dataHandler.update_app_data("dynamic_app_data", "application_form", repr(form_items))
-                dataHandler.add_column('cadet_application_data', item_name)
+                dataHandler.add_column('cadet_application_data', item_name, 'No Data To Show')
                 toast("Item Successfully Added To Application Form!")
 
                 self.ids.item_name_input.text = ''
@@ -661,7 +666,12 @@ class ViewApplicantScreen(Screen):
                 self.applicants_dic[applicant_item.id] = applicant_item
                 md_list.add_widget(applicant_item)
         else:
-            md_list.add_widget(TwoLineListItem(text="No Applicants To Show", secondary_text=''))
+            if self.applicant_type == "Pending":
+                md_list.add_widget(TwoLineListItem(text="No Applicants To Show", secondary_text=''))
+            elif self.applicant_type == "Approved":
+                md_list.add_widget(TwoLineListItem(text="No Applicants To Review", secondary_text=''))
+            else:
+                md_list.add_widget(TwoLineListItem(text="No Cadets To Show", secondary_text=''))
 
         scroll_view.add_widget(md_list)
         self.add_widget(scroll_view)
@@ -669,23 +679,27 @@ class ViewApplicantScreen(Screen):
     def view_applicant(self):
         for applicant in self.applicants_dic.values():
             if applicant.state == 'down':
-                if self.applicant_type == "Approved":
-                    self.manager.get_screen('ShowApplicantInfoScreen').data = {
-                        'Make Cadet': 'check',
-                        'Remove Cadet': 'delete',
-                        'Cancel': 'close',
-                    }
-                    self.manager.get_screen('ShowApplicantInfoScreen').ids.floating_btn.data = self.manager.get_screen(
-                        'ShowApplicantInfoScreen').data
-                else:
+                if self.applicant_type == "Pending":
                     self.manager.get_screen('ShowApplicantInfoScreen').data = {
                         'Approve Application': 'check',
                         'Remove Application': 'delete',
                         'Cancel': 'close',
                     }
-                    self.manager.get_screen('ShowApplicantInfoScreen').ids.floating_btn.data = self.manager.get_screen(
-                        'ShowApplicantInfoScreen').data
+                elif self.applicant_type == "Approved":
+                    self.manager.get_screen('ShowApplicantInfoScreen').data = {
+                        'Make Cadet': 'check',
+                        'Remove Cadet': 'delete',
+                        'Cancel': 'close',
+                    }
+                else:
+                    self.manager.get_screen('ShowApplicantInfoScreen').data = {
+                        'Chat': 'facebook-messenger',  # set messanger logo
+                        'Remove Cadet': 'delete',
+                        'Cancel': 'close',
+                    }
 
+                self.manager.get_screen('ShowApplicantInfoScreen').ids.floating_btn.data = self.manager.get_screen(
+                    'ShowApplicantInfoScreen').data
                 self.manager.get_screen('ShowApplicantInfoScreen').cadet_email_address = applicant.secondary_text
                 self.manager.get_screen('ShowApplicantInfoScreen').show_applicant(applicant.secondary_text)
                 self.manager.get_screen('ShowApplicantInfoScreen').ids.floating_btn.close_stack()
@@ -728,7 +742,7 @@ class ShowApplicantInfoScreen(Screen):
 
     def callback(self, instance):
         if instance.icon == 'check':
-            if self.applicant_type == "Pending":
+            if self.manager.get_screen("ViewApplicantScreen").applicant_type == "Pending":
                 dataHandler.update_app_data('cadet_application_data', 'Status', 'Approved', 'Email',
                                             self.cadet_email_address)
                 toast("Cadet Application Approved!")
@@ -736,6 +750,7 @@ class ShowApplicantInfoScreen(Screen):
             else:
                 dataHandler.update_app_data('cadet_application_data', 'Status', 'Cadet', 'Email',
                                             self.cadet_email_address)
+                # send id pass
                 toast("Cadet Status Updated!")
             self.manager.current = "ViewApplicantScreen"
             self.manager.get_screen("ViewApplicantScreen").applicants_dic = {}
@@ -744,6 +759,10 @@ class ShowApplicantInfoScreen(Screen):
 
         elif instance.icon == 'delete':
             self.dialog.open()
+
+        elif instance.icon == 'facebook-messenger':
+            webbrowser.open(
+                f'https://www.m.me/{dataHandler.query_app_data("Facebook_Id", "cadet_application_data", "Email", self.cadet_email_address)[0][0].split("/")[-1]}')
 
         else:
             self.ids.floating_btn.close_stack()
