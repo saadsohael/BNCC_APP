@@ -5,8 +5,19 @@ import sqlite3
 import requests
 
 
+def has_internet():
+    url = "https://mail.google.com/"
+    timeout = 5
+    try:
+        request = requests.get(url, timeout=timeout)
+        return True
+    except (requests.ConnectionError, requests.Timeout) as exception:
+        return False
+
+
 def primary_form_items():
     form_items = ["Cadet Id",
+                  "Cadet Password",
                   "Name",
                   "Email",
                   "Father's Name",
@@ -24,9 +35,12 @@ def update_app_data(table_name, column_name, new_data, where=None, condition=Non
         if table_name == 'static_app_data':
             db = sqlite3.connect("app_data.db")
             cursor = db.cursor()
-
             cursor.execute(f"UPDATE {table_name} SET {column_name} = (?)", (new_data,))
             db.commit()
+        elif table_name == 'cadet_offline_data':
+            db = sqlite3.connect("app_data.db")
+            cursor = db.cursor()
+            pass
         else:
             db = mysql.connector.connect(
                 host="localhost",
@@ -41,7 +55,7 @@ def update_app_data(table_name, column_name, new_data, where=None, condition=Non
 
         db.close()
     else:
-        if table_name == 'static_app_data':
+        if table_name == 'static_app_data' or table_name == 'cadet_offline_data':
             db = sqlite3.connect("app_data.db")
             cursor = db.cursor()
 
@@ -63,7 +77,7 @@ def update_app_data(table_name, column_name, new_data, where=None, condition=Non
 
 
 def query_app_data(query, table_name, where=None, condition=None):
-    if table_name == 'static_app_data':
+    if table_name == 'static_app_data' or table_name == 'cadet_offline_data':
         db = sqlite3.connect("app_data.db")
     else:
         db = mysql.connector.connect(
@@ -78,7 +92,7 @@ def query_app_data(query, table_name, where=None, condition=None):
         cursor.execute(f"SELECT {query} FROM {table_name}")
 
     else:
-        if table_name == 'static_app_data':
+        if table_name == 'static_app_data' or table_name == 'cadet_offline_data':
             cursor.execute(f"SELECT {query} FROM {table_name} WHERE {where} = (?)", (condition,))
         else:
             cursor.execute(f"SELECT {query} FROM {table_name} WHERE {where} = (%s)", (condition,))
@@ -91,7 +105,7 @@ def create_app_data():
     db = sqlite3.connect("app_data.db")
 
     cursor = db.cursor()
-    cursor.execute("""CREATE TABLE IF NOT EXISTS static_app_data(theme_color text)""")
+    cursor.execute("""CREATE TABLE IF NOT EXISTS static_app_data(theme_color text, remember_check bool)""")
     db.commit()
 
     cursor.execute("SELECT theme_color FROM static_app_data")
@@ -101,8 +115,11 @@ def create_app_data():
     for v in data:
         theme = data
     if theme == '':
-        cursor.execute("INSERT INTO static_app_data VALUES('Light')")
+        cursor.execute("INSERT INTO static_app_data VALUES('Light', False)")
         db.commit()
+
+    cursor.execute("""CREATE TABLE IF NOT EXISTS cadet_offline_data(cadet_id text, cadet_password text)""")
+    db.commit()
 
     db.close()
 
@@ -198,6 +215,33 @@ def is_admin(admin_username, admin_password):
         return False
 
 
+def is_cadet(id, password):
+    db = mysql.connector.connect(
+        host="localhost",
+        user="root",
+        passwd="saad1122002",
+        database="first_db"
+    )
+
+    cursor = db.cursor()
+    if id.isnumeric():
+        cursor.execute("SELECT Cadet_Password FROM cadet_application_data WHERE Cadet_Id = (%s)", (id,))
+    else:
+        cursor.execute("SELECT Cadet_Password FROM cadet_application_data WHERE Email = (%s)", (id,))
+    cadet_password = cursor.fetchall()
+    db.close()
+    if cadet_password:
+        if cadet_password[0][0] != "N/A":
+            if password == cadet_password[0][0]:
+                return True
+            else:
+                return False
+        else:
+            return 'Not Cadet'
+    else:
+        return 'Not Cadet'
+
+
 def otp_matched(otp):
     otp_salt = query_admin('otp_salt')
     hash_otp = query_admin('otp')
@@ -239,7 +283,7 @@ def query_cadet_col_name():
 
 
 def drop_column(table_name, col_name):
-    if table_name == 'static_app_data':
+    if table_name == 'static_app_data' or table_name == 'cadet_offline_data':
         db = sqlite3.connect("app_data.db")
 
     else:
@@ -498,16 +542,10 @@ def add_cadet_info(infolist):
     db.commit()
     db.close()
 
-
-def isValidEmail(email_address):
-    api_key = ""
-    response = requests.get(
-        "https://isitarealemail.com/api/email/validate",
-        params={'email': email_address},
-        headers={'Authorization': "Bearer " + api_key})
-
-    status = response.json()['status']
-    if status == "valid":
-        return True
-    else:
-        return False
+# print(query_app_data("application_form", "dynamic_app_data")[0][0])
+# print(query_app_data("*", "dynamic_app_data")[0][0])
+# print(query_app_data("theme_color", "static_app_data")[0][0])
+# print(query_app_data('otp_manager_2', 'dynamic_app_data'))
+# update_app_data("static_app_data","remember_check",False)
+# print(query_app_data('remember_check', 'static_app_data')[0][0])
+# update_app_data('cadet_offline_data', 'cadet_id', '1234')

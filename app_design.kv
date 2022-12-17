@@ -40,8 +40,10 @@ WindowManager:
     MDLabel:
         id: login_label
         text: "Cadet Login"
-        pos_hint: {"center_x":0.78,"center_y":0.76}
+        pos_hint: {"center_x":0.5,"center_y":0.76}
         font_style: "H5"
+        halign: 'center'
+        valign: 'middle'
 
     BoxLayout:
         orientation: 'vertical'
@@ -57,21 +59,40 @@ WindowManager:
 
             MDTextField:
                 id: username_textfield
-                hint_text: "Type Username or Email"
+                hint_text : "Type Cadet Id or Email"
                 helper_text: "or click forget password"
                 helper_text_mode: "on_focus"
                 icon_right: "account"
                 icon_right_color: "white" if app.theme_cls.theme_style == "Dark" else "black"
                 text_color: "white" if app.theme_cls.theme_style == "Dark" else "black"
+                on_focus: root.auto_complete()
 
             MDTextField:
                 id: password_textfield
                 hint_text: "Type Password"
                 helper_text: "or click forget password"
                 helper_text_mode: "on_focus"
-                icon_right: "key"
+                icon_right: "key-variant"
                 icon_right_color: "white" if app.theme_cls.theme_style == "Dark" else "black"
                 text_color: "white" if app.theme_cls.theme_style == "Dark" else "black"
+                password: True
+                on_focus: root.auto_complete()
+
+
+            GridLayout:
+                cols: 2
+                rows: 1
+                size_hint: 1, 0.05
+
+                MDCheckbox:
+                    id: remember_check
+                    size_hint_x: 0.1
+
+                MDLabel:
+                    size_hint_x : 0.9
+                    text: "Remember Me"
+
+
 
             GridLayout:
                 cols: 2
@@ -99,10 +120,12 @@ WindowManager:
             password_textfield.text = ''
             if change_user.text == "Go to Admin Login": \
             login_label.text = "Admin Login"; \
-            change_user.text = "Go to Cadet Login";
+            change_user.text = "Go to Cadet Login"; \
+            username_textfield.hint_text = "Type Username or Email";
             else: \
             login_label.text = "Cadet Login"; \
-            change_user.text = "Go to Admin Login";
+            change_user.text = "Go to Admin Login"; \
+            username_textfield.hint_text = "Type Cadet Id or Email";
 
     MDLabel:
         text: "OR"
