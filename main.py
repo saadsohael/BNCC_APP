@@ -108,9 +108,20 @@ class LoginScreen(Screen):
             if dataHandler.is_cadet(self.ids.username_textfield.text, self.ids.password_textfield.text) != 'Not Cadet':
                 if dataHandler.is_cadet(self.ids.username_textfield.text, self.ids.password_textfield.text):
                     if self.ids.remember_check.state == 'down':
-                        dataHandler.update_app_data('cadet_offline_data', 'cadet_id', self.ids.username_textfield.text)
-                        dataHandler.update_app_data('cadet_offline_data', 'cadet_password',
-                                                    self.ids.password_textfield.text)
+                        if dataHandler.remember_cadet():
+                            if dataHandler.query_app_data('cadet_id', 'cadet_offline_data')[0][0].isnumeric():
+                                dataHandler.update_app_data('cadet_offline_data', 'cadet_password',
+                                                            self.ids.password_textfield.text, 'cadet_id',
+                                                            self.ids.username_textfield.text)
+                            else:
+                                dataHandler.delete_query("cadet_offline_data", "cadet_id",
+                                                         self.ids.username_textfield.text)
+                                dataHandler.insert_offline_cadet_data(
+                                    [self.ids.username_textfield.text, self.ids.password_textfield.text])
+
+                        else:
+                            dataHandler.insert_offline_cadet_data(
+                                [self.ids.username_textfield.text, self.ids.password_textfield.text])
                         dataHandler.update_app_data('static_app_data', 'remember_check', True)
                     self.manager.current = "CadetDash"
                 else:
@@ -133,8 +144,10 @@ class LoginScreen(Screen):
 
     def auto_complete(self):
         if dataHandler.query_app_data('remember_check', 'static_app_data')[0][0]:
-            # cadet_id = dataHandler.query_app_data('Cadet_Id', 'dynamic_app_data')
-            pass
+            cadet_id = dataHandler.query_app_data('cadet_id', 'cadet_offline_data')[0][0]
+            cadet_password = dataHandler.query_app_data('cadet_password', 'cadet_offline_data')[0][0]
+            self.ids.username_textfield.text = cadet_id
+            self.ids.password_textfield.text = cadet_password
 
     def go_back(self):
 

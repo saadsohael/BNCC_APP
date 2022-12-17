@@ -30,17 +30,33 @@ def primary_form_items():
     return form_items
 
 
+def remember_cadet():
+    db = sqlite3.connect("app_data.db")
+    c = db.cursor()
+    c.execute("SELECT * FROM cadet_offline_data")
+    data = c.fetchall()
+    db.close()
+    if data:
+        return True
+    else:
+        return False
+
+
+def insert_offline_cadet_data(id_pass):
+    db = sqlite3.connect("app_data.db")
+    cursor = db.cursor()
+    cursor.execute("INSERT INTO cadet_offline_data VALUES(?,?)", (id_pass[0], id_pass[1]))
+    db.commit()
+    db.close()
+
+
 def update_app_data(table_name, column_name, new_data, where=None, condition=None):
     if condition is None:
-        if table_name == 'static_app_data':
+        if table_name == 'static_app_data' or table_name == 'cadet_offline_data':
             db = sqlite3.connect("app_data.db")
             cursor = db.cursor()
             cursor.execute(f"UPDATE {table_name} SET {column_name} = (?)", (new_data,))
             db.commit()
-        elif table_name == 'cadet_offline_data':
-            db = sqlite3.connect("app_data.db")
-            cursor = db.cursor()
-            pass
         else:
             db = mysql.connector.connect(
                 host="localhost",
@@ -54,6 +70,7 @@ def update_app_data(table_name, column_name, new_data, where=None, condition=Non
             db.commit()
 
         db.close()
+
     else:
         if table_name == 'static_app_data' or table_name == 'cadet_offline_data':
             db = sqlite3.connect("app_data.db")
@@ -517,15 +534,22 @@ def fetch_notices():
 
 
 def delete_query(table_name, where, condition):
-    db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        passwd="saad1122002",
-        database="first_db"
-    )
-    c = db.cursor()
-    c.execute(f"DELETE FROM {table_name} WHERE {where} = (%s)", (condition,))
-    db.commit()
+    if table_name == "static_app_data" or table_name == "cadet_offline_data":
+        db = sqlite3.connect("app_data.db")
+        c = db.cursor()
+        c.execute(f"DELETE FROM {table_name} WHERE {where} = (?)", (condition,))
+        db.commit()
+    else:
+        db = mysql.connector.connect(
+            host="localhost",
+            user="root",
+            passwd="saad1122002",
+            database="first_db"
+        )
+        c = db.cursor()
+        c.execute(f"DELETE FROM {table_name} WHERE {where} = (%s)", (condition,))
+        db.commit()
+
     db.close()
 
 
