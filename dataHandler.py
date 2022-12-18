@@ -30,10 +30,10 @@ def primary_form_items():
     return form_items
 
 
-def remember_cadet():
+def remember_user():
     db = sqlite3.connect("app_data.db")
     c = db.cursor()
-    c.execute("SELECT * FROM cadet_offline_data")
+    c.execute("SELECT * FROM offline_data")
     data = c.fetchall()
     db.close()
     if data:
@@ -42,17 +42,17 @@ def remember_cadet():
         return False
 
 
-def insert_offline_cadet_data(id_pass):
+def save_offline_data(id_pass):
     db = sqlite3.connect("app_data.db")
     cursor = db.cursor()
-    cursor.execute("INSERT INTO cadet_offline_data VALUES(?,?)", (id_pass[0], id_pass[1]))
+    cursor.execute("INSERT INTO offline_data VALUES(?,?)", (id_pass[0], id_pass[1]))
     db.commit()
     db.close()
 
 
 def update_app_data(table_name, column_name, new_data, where=None, condition=None):
     if condition is None:
-        if table_name == 'static_app_data' or table_name == 'cadet_offline_data':
+        if table_name == 'static_app_data' or table_name == 'offline_data':
             db = sqlite3.connect("app_data.db")
             cursor = db.cursor()
             cursor.execute(f"UPDATE {table_name} SET {column_name} = (?)", (new_data,))
@@ -72,7 +72,7 @@ def update_app_data(table_name, column_name, new_data, where=None, condition=Non
         db.close()
 
     else:
-        if table_name == 'static_app_data' or table_name == 'cadet_offline_data':
+        if table_name == 'static_app_data' or table_name == 'offline_data':
             db = sqlite3.connect("app_data.db")
             cursor = db.cursor()
 
@@ -94,7 +94,7 @@ def update_app_data(table_name, column_name, new_data, where=None, condition=Non
 
 
 def query_app_data(query, table_name, where=None, condition=None):
-    if table_name == 'static_app_data' or table_name == 'cadet_offline_data':
+    if table_name == 'static_app_data' or table_name == 'offline_data':
         db = sqlite3.connect("app_data.db")
     else:
         db = mysql.connector.connect(
@@ -109,7 +109,7 @@ def query_app_data(query, table_name, where=None, condition=None):
         cursor.execute(f"SELECT {query} FROM {table_name}")
 
     else:
-        if table_name == 'static_app_data' or table_name == 'cadet_offline_data':
+        if table_name == 'static_app_data' or table_name == 'offline_data':
             cursor.execute(f"SELECT {query} FROM {table_name} WHERE {where} = (?)", (condition,))
         else:
             cursor.execute(f"SELECT {query} FROM {table_name} WHERE {where} = (%s)", (condition,))
@@ -135,7 +135,7 @@ def create_app_data():
         cursor.execute("INSERT INTO static_app_data VALUES('Light', False)")
         db.commit()
 
-    cursor.execute("""CREATE TABLE IF NOT EXISTS cadet_offline_data(cadet_id text, cadet_password text)""")
+    cursor.execute("""CREATE TABLE IF NOT EXISTS offline_data(cadet_id text, cadet_password text)""")
     db.commit()
 
     db.close()
@@ -300,7 +300,7 @@ def query_cadet_col_name():
 
 
 def drop_column(table_name, col_name):
-    if table_name == 'static_app_data' or table_name == 'cadet_offline_data':
+    if table_name == 'static_app_data' or table_name == 'offline_data':
         db = sqlite3.connect("app_data.db")
 
     else:
@@ -534,7 +534,7 @@ def fetch_notices():
 
 
 def delete_query(table_name, where, condition):
-    if table_name == "static_app_data" or table_name == "cadet_offline_data":
+    if table_name == "static_app_data" or table_name == "offline_data":
         db = sqlite3.connect("app_data.db")
         c = db.cursor()
         c.execute(f"DELETE FROM {table_name} WHERE {where} = (?)", (condition,))
@@ -572,4 +572,4 @@ def add_cadet_info(infolist):
 # print(query_app_data('otp_manager_2', 'dynamic_app_data'))
 # update_app_data("static_app_data","remember_check",False)
 # print(query_app_data('remember_check', 'static_app_data')[0][0])
-# update_app_data('cadet_offline_data', 'cadet_id', '1234')
+# update_app_data('offline_data', 'cadet_id', '1234')
