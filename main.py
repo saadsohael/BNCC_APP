@@ -42,14 +42,25 @@ class LoginScreen(Screen):
     def __init__(self, **kwargs):
         super(LoginScreen, self).__init__(**kwargs)
         Window.bind(on_keyboard=self._key_handler)  # bind screen with keyboard or touch input
-        self.auto_complete_dialog = MDDialog(title="Do You Want To Autofill ID and Password?",
-                                             size_hint=(None, None),
-                                             _spacer_top=sp(15),
-                                             width=(self.width - sp(80)),
-                                             buttons=[MDFlatButton(text='Yes', on_release=self.autofill),
-                                                      MDFlatButton(text='No',
-                                                                   on_release=self.close_autofill)]
-                                             )
+
+        self.auto_complete_admin = MDDialog(title="Do You Want To Autofill ID and Password?",
+                                            size_hint=(None, None),
+                                            _spacer_top=sp(15),
+                                            width=(self.width - sp(80)),
+                                            buttons=[MDFlatButton(text='Yes',
+                                                                  on_release=self.admin_autofill),
+                                                     MDFlatButton(text='No',
+                                                                  on_release=self.close_autofill)]
+                                            )
+
+        self.auto_complete_cadet = MDDialog(title="Do You Want To Autofill ID and Password?",
+                                            size_hint=(None, None),
+                                            _spacer_top=sp(15),
+                                            width=(self.width - sp(80)),
+                                            buttons=[MDFlatButton(text='Yes', on_release=self.cadet_autofill),
+                                                     MDFlatButton(text='No',
+                                                                  on_release=self.close_autofill)]
+                                            )
 
     # handles keyboard/ touch input!
     def _key_handler(self, instance, key, *args):
@@ -104,39 +115,31 @@ class LoginScreen(Screen):
 
     def log_in_btn(self):
         if self.ids.login_label.text == "Admin Login":
-            self.manager.current = "AdminDash"
-            # if dataHandler.is_admin(self.ids.username_textfield.text, self.ids.password_textfield.text):
-            #     self.manager.current = "AdminDash"
-            #     self.ids.username_textfield.text = ''
-            #     self.ids.password_textfield.text = ''
-            # else:
-            #     self.show_wrong_credentials("Wrong Username or Password!")
+            # self.manager.current = "AdminDash"
+            if dataHandler.is_admin(self.ids.username_textfield.text, self.ids.password_textfield.text):
+                if self.ids.remember_check.state == 'down':
+                    dataHandler.create_offline_datatable('admin_offline_data', 'admin_id', 'admin_password')
+                    dataHandler.remember_user("admin_offline_data", self.ids.username_textfield.text,
+                                              self.ids.password_textfield.text,
+                                              "admin_id")
+                    dataHandler.update_app_data('static_app_data', 'remember_admin', True)
+                self.manager.current = "AdminDash"
+                self.ids.username_textfield.text = ''
+                self.ids.password_textfield.text = ''
+            else:
+                toast("Wrong Username or Password!")
         else:
             if dataHandler.is_cadet(self.ids.username_textfield.text, self.ids.password_textfield.text) != 'Not Cadet':
                 if dataHandler.is_cadet(self.ids.username_textfield.text, self.ids.password_textfield.text):
                     if self.ids.remember_check.state == 'down':
-                        if dataHandler.remember_user():
-                            conditions = [self.ids.username_textfield.text.isnumeric() and
-                                          dataHandler.query_app_data('cadet_id', 'offline_data')[0][
-                                              0].isnumeric(),
-                                          self.ids.username_textfield.text.isalnum() and
-                                          dataHandler.query_app_data('cadet_id', 'offline_data')[0][0].isalnum()]
-                            if any(conditions):
-                                dataHandler.update_app_data('offline_data', 'cadet_password',
-                                                            self.ids.password_textfield.text, 'cadet_id',
-                                                            self.ids.username_textfield.text)
-                            else:
-                                dataHandler.delete_query("offline_data", "cadet_id",
-                                                         dataHandler.query_app_data('cadet_id', 'offline_data')[
-                                                             0][0])
-                                dataHandler.save_offline_data(
-                                    [self.ids.username_textfield.text, self.ids.password_textfield.text])
-                        else:
-                            dataHandler.save_offline_data(
-                                [self.ids.username_textfield.text, self.ids.password_textfield.text])
-                        dataHandler.update_app_data('static_app_data', 'remember_check', True)
-
+                        dataHandler.create_offline_datatable('cadet_offline_data', 'cadet_id', 'cadet_password')
+                        dataHandler.remember_user("cadet_offline_data", self.ids.username_textfield.text,
+                                                  self.ids.password_textfield.text,
+                                                  "cadet_id")
+                        dataHandler.update_app_data('static_app_data', 'remember_cadet', True)
                     self.manager.current = "CadetDash"
+                    self.ids.username_textfield.text = ''
+                    self.ids.password_textfield.text = ''
                 else:
                     toast("Wrong Id or Password!")
             else:
@@ -144,31 +147,33 @@ class LoginScreen(Screen):
 
         self.manager.get_screen("AdminDash").ids.nav_drawer.set_state("close")
 
-    def show_wrong_credentials(self, text):
-        self.dialog_box = MDDialog(title=text,
-                                   size_hint=(None, None),
-                                   _spacer_top=sp(15),
-                                   width=(self.width - sp(50)),
-                                   buttons=[MDFlatButton(text='Dismiss', on_release=self.DISMISS_DIALOG_BOX)])
-        self.dialog_box.open()
-
-    def DISMISS_DIALOG_BOX(self, instance):
-        self.dialog_box.dismiss()
-
     def auto_complete(self):
-        if dataHandler.query_app_data('remember_check', 'static_app_data')[0][
-            0] and self.ids.username_textfield.text == '':
-            self.auto_complete_dialog.open()
+        if self.ids.login_label.text == "Admin Login":
+            if dataHandler.query_app_data('remember_admin', 'static_app_data')[0][0]:
+                if self.ids.username_textfield.text == '':
+                    self.auto_complete_admin.open()
+        elif self.ids.login_label.text == "Cadet Login":
+            if dataHandler.query_app_data('remember_cadet', 'static_app_data')[0][0]:
+                if self.ids.username_textfield.text == '':
+                    self.auto_complete_cadet.open()
 
-    def autofill(self, instance):
-        cadet_id = dataHandler.query_app_data('cadet_id', 'offline_data')[0][0]
-        cadet_password = dataHandler.query_app_data('cadet_password', 'offline_data')[0][0]
+    def admin_autofill(self, instance):
+        cadet_id = dataHandler.query_app_data("admin_id", "admin_offline_data")[0][0]
+        cadet_password = dataHandler.query_app_data("admin_password", "admin_offline_data")[0][0]
         self.ids.username_textfield.text = cadet_id
         self.ids.password_textfield.text = cadet_password
-        self.auto_complete_dialog.dismiss()
+        self.auto_complete_admin.dismiss()
+
+    def cadet_autofill(self, instance):
+        cadet_id = dataHandler.query_app_data("cadet_id", "cadet_offline_data")[0][0]
+        cadet_password = dataHandler.query_app_data("cadet_password", "cadet_offline_data")[0][0]
+        self.ids.username_textfield.text = cadet_id
+        self.ids.password_textfield.text = cadet_password
+        self.auto_complete_cadet.dismiss()
 
     def close_autofill(self, instance):
-        self.auto_complete_dialog.dismiss()
+        self.auto_complete_admin.dismiss()
+        self.auto_complete_cadet.dismiss()
 
     def go_back(self):
         # fetch previous_screens

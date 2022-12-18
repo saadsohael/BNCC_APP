@@ -30,29 +30,38 @@ def primary_form_items():
     return form_items
 
 
-def remember_user():
-    db = sqlite3.connect("app_data.db")
-    c = db.cursor()
-    c.execute("SELECT * FROM offline_data")
-    data = c.fetchall()
-    db.close()
-    if data:
-        return True
-    else:
-        return False
-
-
-def save_offline_data(id_pass):
+def save_offline_data(user_offline_data, id_pass):
     db = sqlite3.connect("app_data.db")
     cursor = db.cursor()
-    cursor.execute("INSERT INTO offline_data VALUES(?,?)", (id_pass[0], id_pass[1]))
+    cursor.execute(f"INSERT INTO {user_offline_data} VALUES(?,?)", (id_pass[0], id_pass[1]))
     db.commit()
     db.close()
 
 
+def remember_user(user_offline_data, user_username, user_password, user_id):
+    db = sqlite3.connect("app_data.db")
+    c = db.cursor()
+    c.execute(f"SELECT * FROM {user_offline_data}")
+    data = c.fetchall()
+    db.close()
+    if data:
+        conditions = [user_username.isnumeric() and
+                      query_app_data(user_id, user_offline_data)[0][0].isnumeric(),
+                      user_username.isalnum() and
+                      query_app_data(user_id, user_username)[0][0].isalnum()]
+        if any(conditions):
+            update_app_data(user_offline_data, 'cadet_password',
+                            user_password, user_id, user_username)
+        else:
+            delete_query(user_offline_data, user_id, query_app_data(user_id, user_offline_data)[0][0])
+            save_offline_data(user_offline_data, [user_username, user_password])
+    else:
+        save_offline_data(user_offline_data, [user_username, user_password])
+
+
 def update_app_data(table_name, column_name, new_data, where=None, condition=None):
     if condition is None:
-        if table_name == 'static_app_data' or table_name == 'offline_data':
+        if table_name in ['static_app_data', "admin_offline_data", "cadet_offline_data"]:
             db = sqlite3.connect("app_data.db")
             cursor = db.cursor()
             cursor.execute(f"UPDATE {table_name} SET {column_name} = (?)", (new_data,))
@@ -72,12 +81,12 @@ def update_app_data(table_name, column_name, new_data, where=None, condition=Non
         db.close()
 
     else:
-        if table_name == 'static_app_data' or table_name == 'offline_data':
+        if table_name in ['static_app_data', "admin_offline_data", "cadet_offline_data"]:
             db = sqlite3.connect("app_data.db")
             cursor = db.cursor()
-
             cursor.execute(f"UPDATE {table_name} SET {column_name} = (?) WHERE {where} = (?)", (new_data, condition))
             db.commit()
+
         else:
             db = mysql.connector.connect(
                 host="localhost",
@@ -94,7 +103,7 @@ def update_app_data(table_name, column_name, new_data, where=None, condition=Non
 
 
 def query_app_data(query, table_name, where=None, condition=None):
-    if table_name == 'static_app_data' or table_name == 'offline_data':
+    if table_name in ['static_app_data', "admin_offline_data", "cadet_offline_data"]:
         db = sqlite3.connect("app_data.db")
     else:
         db = mysql.connector.connect(
@@ -109,7 +118,7 @@ def query_app_data(query, table_name, where=None, condition=None):
         cursor.execute(f"SELECT {query} FROM {table_name}")
 
     else:
-        if table_name == 'static_app_data' or table_name == 'offline_data':
+        if table_name in ['static_app_data', "admin_offline_data", "cadet_offline_data"]:
             cursor.execute(f"SELECT {query} FROM {table_name} WHERE {where} = (?)", (condition,))
         else:
             cursor.execute(f"SELECT {query} FROM {table_name} WHERE {where} = (%s)", (condition,))
@@ -122,7 +131,7 @@ def create_app_data():
     db = sqlite3.connect("app_data.db")
 
     cursor = db.cursor()
-    cursor.execute("""CREATE TABLE IF NOT EXISTS static_app_data(theme_color text, remember_check bool)""")
+    cursor.execute("""CREATE TABLE IF NOT EXISTS static_app_data(theme_color text, remember_admin bool, remember_cadet bool)""")
     db.commit()
 
     cursor.execute("SELECT theme_color FROM static_app_data")
@@ -132,11 +141,8 @@ def create_app_data():
     for v in data:
         theme = data
     if theme == '':
-        cursor.execute("INSERT INTO static_app_data VALUES('Light', False)")
+        cursor.execute("INSERT INTO static_app_data VALUES('Light', False, False)")
         db.commit()
-
-    cursor.execute("""CREATE TABLE IF NOT EXISTS offline_data(cadet_id text, cadet_password text)""")
-    db.commit()
 
     db.close()
 
@@ -199,6 +205,14 @@ def create_app_data():
         online_db.commit()
 
     online_db.close()
+
+
+def create_offline_datatable(user_offline_data, user_id_col, user_password_col):
+    db = sqlite3.connect("app_data.db")
+    cursor = db.cursor()
+    cursor.execute(f"CREATE TABLE IF NOT EXISTS {user_offline_data}({user_id_col} text, {user_password_col} text)")
+    db.commit()
+    db.close()
 
 
 def is_admin(admin_username, admin_password):
@@ -300,7 +314,7 @@ def query_cadet_col_name():
 
 
 def drop_column(table_name, col_name):
-    if table_name == 'static_app_data' or table_name == 'offline_data':
+    if table_name in ['static_app_data', "admin_offline_data", "cadet_offline_data"]:
         db = sqlite3.connect("app_data.db")
 
     else:
@@ -534,7 +548,7 @@ def fetch_notices():
 
 
 def delete_query(table_name, where, condition):
-    if table_name == "static_app_data" or table_name == "offline_data":
+    if table_name in ['static_app_data', "admin_offline_data", "cadet_offline_data"]:
         db = sqlite3.connect("app_data.db")
         c = db.cursor()
         c.execute(f"DELETE FROM {table_name} WHERE {where} = (?)", (condition,))
