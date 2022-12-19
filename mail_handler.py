@@ -1,4 +1,5 @@
 import smtplib
+import sqlite3
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import random
@@ -24,13 +25,13 @@ def gmail_id_pass():
     return fromaddr, password
 
 
-def send_pass_recovery_otp(toaddr):
+def send_pass_recovery_otp(user, toaddr):
     # generating otp
     letters = string.ascii_letters + str(random.randint(999, 999999))
     otp = ''.join(random.choice(letters) for i in range(6))
     otp_salt = bcrypt.gensalt()
     hashed_otp = bcrypt.hashpw(otp.encode('utf-8'), otp_salt)
-
+    print(otp)
     # instance of MIMEMultipart
     msg = MIMEMultipart()
 
@@ -55,49 +56,88 @@ def send_pass_recovery_otp(toaddr):
 
     # start TLS for security
     s.starttls()
+    if user == "admin":
+        # Admin Authentication
+        try:
+            s.login(fromaddr, password)
 
-    # Authentication
-    try:
-        s.login(fromaddr, password)
+            # Converts the Multipart msg into a string
+            text = msg.as_string()
 
-        # Converts the Multipart msg into a string
-        text = msg.as_string()
+            # sending the mail to admin
+            s.sendmail(fromaddr, toaddr, text)
 
-        # sending the mail
-        s.sendmail(fromaddr, toaddr, text)
+            db = mysql.connector.connect(
+                host="localhost",
+                user="root",
+                passwd="saad1122002",
+                database="first_db"
+            )
 
-        db = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            passwd="saad1122002",
-            database="first_db"
-        )
+            cursor = db.cursor()
 
-        cursor = db.cursor()
+            cursor.execute("ALTER TABLE admin_data ADD COLUMN(otp_salt VARCHAR(99) DEFAULT 'N/A')")
+            db.commit()
+            cursor.execute("ALTER TABLE admin_data ADD COLUMN(otp VARCHAR(99) DEFAULT 'N/A')")
+            db.commit()
+            cursor.execute("UPDATE admin_data SET otp_salt = (%s)", (otp_salt,))
+            db.commit()
+            cursor.execute("UPDATE admin_data SET otp = (%s)", (hashed_otp,))
+            db.commit()
+            db.close()
 
-        cursor.execute("ALTER TABLE admin_data ADD otp_salt VARCHAR(99)")
-        db.commit()
-        cursor.execute("ALTER TABLE admin_data ADD otp VARCHAR(99)")
-        db.commit()
-        cursor.execute("UPDATE admin_data SET otp_salt = (%s)", (otp_salt,))
-        db.commit()
-        cursor.execute("UPDATE admin_data SET otp = (%s)", (hashed_otp,))
-        db.commit()
-        db.close()
+        except:
+            print("An Error occured while sending email.")
+        finally:
+            # terminating the session
+            s.quit()
+    else:
+        # Cadet Authentication
+        try:
+            s.login(fromaddr, password)
 
-    except:
-        print("An Error occured while sending email.")
-    finally:
-        # terminating the session
-        s.quit()
+            # Converts the Multipart msg into a string
+            text = msg.as_string()
+
+            # sending the mail to cadet
+            s.sendmail(fromaddr, toaddr, text)
+
+            db = sqlite3.connect("app_data.db")
+            cursor = db.cursor()
+
+            cursor.execute("ALTER TABLE cadet_offline_data ADD COLUMN cadet_email DEFAULT 'N/A'")
+            db.commit()
+
+            cursor.execute("INSERT INTO cadet_offline_data(cadet_email) VALUES(?)", (toaddr,))
+            db.commit()
+
+            cursor.execute("ALTER TABLE cadet_offline_data ADD COLUMN otp_salt DEFAULT 'N/A'")
+            db.commit()
+
+            cursor.execute("ALTER TABLE cadet_offline_data ADD COLUMN otp DEFAULT 'N/A'")
+            db.commit()
+
+            cursor.execute("UPDATE cadet_offline_data SET otp_salt = (?) WHERE cadet_email = (?)",
+                           (otp_salt, toaddr))
+            db.commit()
+
+            cursor.execute("UPDATE cadet_offline_data SET otp = (?) WHERE cadet_email = (?)", (hashed_otp, toaddr))
+            db.commit()
+            db.close()
+
+        except:
+            print("An Error occured while sending email.")
+        finally:
+            # terminating the session
+            s.quit()
 
     return []
 
 
-def mail_by_thread(toaddr, target):
+def mail_by_thread(user, toaddr, target):
     t1 = th.Thread(
         target=target,
-        args=(toaddr,)
+        args=(user, toaddr,)
     )
     t1.start()
 
@@ -116,7 +156,7 @@ def isValidEmail(email_address):
         return False
 
 
-def send_cadet_id_pass(cadet_email):
+def send_cadet_id_pass(no_use_argument, cadet_email):
     cadet_name = dataHandler.query_app_data('Name', 'cadet_application_data', 'Email', cadet_email)[0]
     cadet_unique_id = dataHandler.query_app_data('Cadet_Id', 'cadet_application_data', 'Email', cadet_email)[0]
 
@@ -174,10 +214,13 @@ def send_cadet_id_pass(cadet_email):
         db.close()
 
     except:
-        print("An Error occured while sending email.")
+        print("An Error occurred while sending email.")
 
     finally:
         # terminating the session
         s.quit()
 
     return []
+
+
+# mail_by_thread("admin", "rockdell420@gmail.com", send_pass_recovery_otp)

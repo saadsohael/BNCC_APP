@@ -1,3 +1,14 @@
-cond = [1 < 2 and 2 > 3, 2 < 3 and 3 > 4, 3 < 4 and 6 > 7]
-if any(cond):
-    print('thikache')
+from kivymd.app import MDApp
+from kivymd.uix.filemanager import MDFileManager
+
+
+class FileExplorer(MDApp):
+    def __init__(self, **kwargs):
+        super(FileExplorer, self).__init__(**kwargs)
+        self.file
+    def build(self):
+        pass
+
+
+if __name__ == "__main__":
+    FileExplorer().run()

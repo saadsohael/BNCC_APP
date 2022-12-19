@@ -126,13 +126,13 @@ class LoginScreen(Screen):
                 self.manager.current = "AdminDash"
                 self.ids.username_textfield.text = ''
                 self.ids.password_textfield.text = ''
+                self.ids.remember_check.state = 'normal'
             else:
                 toast("Wrong Username or Password!")
         else:
             if dataHandler.is_cadet(self.ids.username_textfield.text, self.ids.password_textfield.text) != 'Not Cadet':
                 if dataHandler.is_cadet(self.ids.username_textfield.text, self.ids.password_textfield.text):
                     if self.ids.remember_check.state == 'down':
-                        dataHandler.create_offline_datatable('cadet_offline_data', 'cadet_id', 'cadet_password')
                         dataHandler.remember_user("cadet_offline_data", self.ids.username_textfield.text,
                                                   self.ids.password_textfield.text,
                                                   "cadet_id")
@@ -140,6 +140,7 @@ class LoginScreen(Screen):
                     self.manager.current = "CadetDash"
                     self.ids.username_textfield.text = ''
                     self.ids.password_textfield.text = ''
+                    self.ids.remember_check.state = 'normal'
                 else:
                     toast("Wrong Id or Password!")
             else:
@@ -219,21 +220,19 @@ class PasswordRecoveryWindow(Screen):
 
     def send_otp(self):
 
-        if self.manager.get_screen("LoginScreen").ids.login_label.text == "Cadet Login":
-            pass
+        if dataHandler.has_internet():
 
-        elif self.manager.get_screen("LoginScreen").ids.login_label.text == "Admin Login":
+            if dataHandler.query_app_data("otp_manager_1", "dynamic_app_data")[0][0] < 20 and \
+                    dataHandler.query_app_data("otp_manager_2", "dynamic_app_data")[0][0] < 20:
 
-            if self.ids.mail_address.text == dataHandler.query_admin('admin_email'):
+                if not dataHandler.otp_recently_sent([v for v in time.asctime().split(" ") if v != '']):
+                    confirm_otp_btn = MDRaisedButton(text="Confirm OTP")
+                    if self.manager.get_screen("LoginScreen").ids.login_label.text == "Admin Login":
+                        if self.ids.mail_address.text == dataHandler.query_admin('admin_email'):
+                            mail_handler.mail_by_thread("admin", self.ids.mail_address.text,
+                                                        mail_handler.send_pass_recovery_otp)
+                            confirm_otp_btn.bind(on_release=self.confirm_otp)
 
-                if dataHandler.has_internet():
-
-                    if dataHandler.query_app_data("otp_manager_1", "dynamic_app_data")[0][0] < 20 and \
-                            dataHandler.query_app_data("otp_manager_2", "dynamic_app_data")[0][0] < 20:
-
-                        if not dataHandler.otp_recently_sent([v for v in time.asctime().split(" ") if v != '']):
-
-                            mail_handler.mail_by_thread(self.ids.mail_address.text, mail_handler.send_pass_recovery_otp)
                             dataHandler.mark_otp()
                             dataHandler.update_otp_counter("increase")
                             self.open_dialog("OTP has been sent to your email account\nCheck Spam if you can't see..\n"
@@ -241,10 +240,8 @@ class PasswordRecoveryWindow(Screen):
                             self.ids.send_otp_btn.disabled = True
                             self.start_countdown()
 
-                            otp_label = MDLabel(text='type otp : ')
-                            self.otp_textfield = MDTextField(hint_text='enter otp here...')
-                            confirm_otp_btn = MDRaisedButton(text="Confirm OTP")
-                            confirm_otp_btn.bind(on_release=self.confirm_otp)
+                            otp_label = MDLabel(text='type otp : ', size_hint_x=0.2)
+                            self.otp_textfield = MDTextField(hint_text='enter otp here...', size_hint_x=0.8)
                             blank_space_ = MDLabel(text='')
 
                             self.ids.reset_items.clear_widgets()
@@ -254,16 +251,42 @@ class PasswordRecoveryWindow(Screen):
                             self.ids.reset_items.add_widget(blank_space_)
 
                         else:
-                            self.open_dialog("You cannot change otp more than once a day.\nPlease try again Tomorrow!")
-
+                            toast("Wrong Email Address")
                     else:
-                        self.open_dialog("Oops! Something went wrong.\nPlease Try Again Tomorrow!")
+                        if self.ids.mail_address.text in [v[0] for v in
+                                                          dataHandler.query_app_data("Email", "cadet_application_data",
+                                                                                     "Status", "Cadet")]:
+                            mail_handler.mail_by_thread("cadet", self.ids.mail_address.text,
+                                                        mail_handler.send_pass_recovery_otp)
+                            confirm_otp_btn.bind(on_release=self.confirm_otp)
 
+                            dataHandler.mark_otp()
+                            dataHandler.update_otp_counter("increase")
+                            self.open_dialog("OTP has been sent to your email account\nCheck Spam if you can't see..\n"
+                                             "Or try again after 2 minutes.")
+                            self.ids.send_otp_btn.disabled = True
+                            self.start_countdown()
+
+                            otp_label = MDLabel(text='type otp : ')
+                            self.otp_textfield = MDTextField(hint_text='enter otp here...')
+                            blank_space_ = MDLabel(text='')
+
+                            self.ids.reset_items.clear_widgets()
+                            self.ids.reset_items.add_widget(otp_label)
+                            self.ids.reset_items.add_widget(self.otp_textfield)
+                            self.ids.reset_items.add_widget(confirm_otp_btn)
+                            self.ids.reset_items.add_widget(blank_space_)
+
+                        else:
+                            toast("Wrong Email Address")
                 else:
-                    toast("Please Check Your Internet Connection!")
+                    self.open_dialog("You cannot change otp more than once a day.\nPlease try again Tomorrow!")
 
             else:
-                toast("Wrong Email Address!")
+                self.open_dialog("Oops! Something went wrong.\nPlease Try Again Tomorrow!")
+
+        else:
+            toast("Please Check Your Internet Connection!")
 
     def open_dialog(self, title):  # opens dialog box to confirm action
 
@@ -279,26 +302,51 @@ class PasswordRecoveryWindow(Screen):
 
     def confirm_otp(self, instance):  # when confirm otp button is pressed!
 
-        if dataHandler.otp_matched(self.otp_textfield.text):
-            new_pass_label = MDLabel(text='Type new password : ')
-            self.new_pass_textfield = MDTextField(hint_text='enter new pass...')
-            confirm_pass_btn = MDRaisedButton(text="Confirm Password")
-            confirm_pass_btn.bind(on_release=self.confirm_pass)
-            blank_space_ = MDLabel(text='')
-            dataHandler.drop_column('admin_data', 'otp')
+        new_pass_label = MDLabel(text='Type new password : ')
+        self.new_pass_textfield = MDTextField(hint_text='enter new pass...')
+        confirm_pass_btn = MDRaisedButton(text="Confirm Password")
+        if self.manager.get_screen("LoginScreen").ids.login_label.text == "Admin Login":
+            if dataHandler.otp_matched("admin", self.otp_textfield.text):
+                confirm_pass_btn.bind(on_release=self.confirm_admin_pass)
+                dataHandler.drop_column('admin_data', 'otp')
+                dataHandler.drop_column('admin_data', 'otp_salt')
+                blank_space_ = MDLabel(text='')
+                self.ids.reset_items.clear_widgets()
+                self.ids.reset_items.add_widget(new_pass_label)
+                self.ids.reset_items.add_widget(self.new_pass_textfield)
+                self.ids.reset_items.add_widget(confirm_pass_btn)
+                self.ids.reset_items.add_widget(blank_space_)
+            else:
+                toast("Wrong OTP!")
 
-            self.ids.reset_items.clear_widgets()
-            self.ids.reset_items.add_widget(new_pass_label)
-            self.ids.reset_items.add_widget(self.new_pass_textfield)
-            self.ids.reset_items.add_widget(confirm_pass_btn)
-            self.ids.reset_items.add_widget(blank_space_)
+        elif self.manager.get_screen("LoginScreen").ids.login_label.text == "Cadet Login":
+            if dataHandler.otp_matched("cadet", self.otp_textfield.text):
+                confirm_pass_btn.bind(on_release=self.confirm_cadet_pass)
+                dataHandler.drop_column('cadet_offline_data', 'otp')
+                dataHandler.drop_column('cadet_offline_data', 'otp_salt')
+                dataHandler.drop_column('cadet_offline_data', 'cadet_email')
+                blank_space_ = MDLabel(text='')
+                self.ids.reset_items.clear_widgets()
+                self.ids.reset_items.add_widget(new_pass_label)
+                self.ids.reset_items.add_widget(self.new_pass_textfield)
+                self.ids.reset_items.add_widget(confirm_pass_btn)
+                self.ids.reset_items.add_widget(blank_space_)
+            else:
+                toast("Wrong OTP!")
 
-        else:
-            toast("Wrong OTP!")
-
-    def confirm_pass(self, instance):  # when the change password button is pressed!
+    def confirm_admin_pass(self, instance):  # when the change password button is pressed!
 
         admin.update_password(self.new_pass_textfield.text)  # update password on server
+
+        self.manager.current = "LoginScreen"
+        toast("Your password has been changed!")
+        self.ids.mail_address.text = ''
+        self.ids.reset_items.clear_widgets()  # clear new password input textfield!
+
+    def confirm_cadet_pass(self, instance):  # when the change password button is pressed!
+
+        dataHandler.update_app_data('cadet_application_data', 'Cadet_Password', self.new_pass_textfield.text, 'Email',
+                                    self.ids.mail_address.text)  # update password on server
 
         self.manager.current = "LoginScreen"
         toast("Your password has been changed!")
@@ -773,7 +821,7 @@ class ViewApplicantScreen(Screen):
                     }
                 else:
                     self.manager.get_screen('ShowApplicantInfoScreen').data = {
-                        'Chat': 'facebook-messenger',  # set messanger logo
+                        'Chat': 'facebook-messenger',
                         'Remove Cadet': 'delete',
                         'Cancel': 'close',
                     }
@@ -810,15 +858,16 @@ class ShowApplicantInfoScreen(Screen):
         cadet_cols.insert(0, "Status")
         data = [v for v in dataHandler.query_app_data("*", "cadet_application_data") if (email in v)][0]
         for v in cadet_cols:
-            label = MDLabel(text=f'{v} : ', size_hint_x=0.55)
-            if v == "Height":
-                label2 = MDLabel(text=f"{data[cadet_cols.index(v)]} inch", size_hint_x=0.45)
-            elif v == "Weight":
-                label2 = MDLabel(text=f"{data[cadet_cols.index(v)]} kg", size_hint_x=0.45)
-            else:
-                label2 = MDLabel(text=data[cadet_cols.index(v)], size_hint_x=0.45)
-            self.ids.applicant_info_grid.add_widget(label)
-            self.ids.applicant_info_grid.add_widget(label2)
+            if v != "Cadet_Password":
+                label = MDLabel(text=f'{v} : ', size_hint_x=0.55)
+                if v == "Height":
+                    label2 = MDLabel(text=f"{data[cadet_cols.index(v)]} inch", size_hint_x=0.45)
+                elif v == "Weight":
+                    label2 = MDLabel(text=f"{data[cadet_cols.index(v)]} kg", size_hint_x=0.45)
+                else:
+                    label2 = MDLabel(text=data[cadet_cols.index(v)], size_hint_x=0.45)
+                self.ids.applicant_info_grid.add_widget(label)
+                self.ids.applicant_info_grid.add_widget(label2)
 
     def callback(self, instance):
         if instance.icon == 'check':
@@ -833,7 +882,7 @@ class ShowApplicantInfoScreen(Screen):
                             dataHandler.query_app_data('otp_manager_2', 'dynamic_app_data')[0][0] < 20:
                         dataHandler.update_app_data('cadet_application_data', 'Status', 'Cadet', 'Email',
                                                     self.cadet_email_address)
-                        mail_handler.mail_by_thread(self.cadet_email_address, mail_handler.send_cadet_id_pass)
+                        mail_handler.mail_by_thread("cadet", self.cadet_email_address, mail_handler.send_cadet_id_pass)
                         dataHandler.update_otp_counter('increase')
                         toast("Cadet Status Updated!")
                     else:
@@ -880,7 +929,6 @@ class CadetsInfoScreen(Screen):
 
 class CadetDash(Screen):
     pass
-
 
 class NoticeScreen(Screen):
 

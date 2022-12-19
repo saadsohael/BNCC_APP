@@ -131,7 +131,8 @@ def create_app_data():
     db = sqlite3.connect("app_data.db")
 
     cursor = db.cursor()
-    cursor.execute("""CREATE TABLE IF NOT EXISTS static_app_data(theme_color text, remember_admin bool, remember_cadet bool)""")
+    cursor.execute(
+        """CREATE TABLE IF NOT EXISTS static_app_data(theme_color text, remember_admin bool, remember_cadet bool)""")
     db.commit()
 
     cursor.execute("SELECT theme_color FROM static_app_data")
@@ -143,6 +144,12 @@ def create_app_data():
     if theme == '':
         cursor.execute("INSERT INTO static_app_data VALUES('Light', False, False)")
         db.commit()
+
+    cursor.execute("""CREATE TABLE IF NOT EXISTS cadet_offline_data 
+    (cadet_id text DEFAULT 'NOT SAVED', 
+    cadet_password text DEFAULT 'NOT SAVED')
+    """)
+    db.commit()
 
     db.close()
 
@@ -273,10 +280,16 @@ def is_cadet(id, password):
         return 'Not Cadet'
 
 
-def otp_matched(otp):
-    otp_salt = query_admin('otp_salt')
-    hash_otp = query_admin('otp')
-    user_otp = (bcrypt.hashpw(otp.encode('utf-8'), otp_salt.encode('utf-8'))).decode('utf-8')
+def otp_matched(user, otp, cadet_mail=None):
+    if user == "admin":
+        otp_salt = query_admin('otp_salt')
+        hash_otp = query_admin('otp')
+        user_otp = (bcrypt.hashpw(otp.encode('utf-8'), otp_salt.encode('utf-8'))).decode('utf-8')
+    else:
+        otp_salt = query_app_data('otp_salt', 'cadet_offline_data', 'cadet_email', cadet_mail)[0][0].decode('utf-8')
+        hash_otp = query_app_data('otp', 'cadet_offline_data', 'cadet_email', cadet_mail)[0][0].decode('utf-8')
+        user_otp = (bcrypt.hashpw(otp.encode('utf-8'), otp_salt.encode('utf-8'))).decode('utf-8')
+
     if user_otp == hash_otp:
         return True
     else:
@@ -580,6 +593,7 @@ def add_cadet_info(infolist):
     db.commit()
     db.close()
 
+
 # print(query_app_data("application_form", "dynamic_app_data")[0][0])
 # print(query_app_data("*", "dynamic_app_data")[0][0])
 # print(query_app_data("theme_color", "static_app_data")[0][0])
@@ -587,3 +601,7 @@ def add_cadet_info(infolist):
 # update_app_data("static_app_data","remember_check",False)
 # print(query_app_data('remember_check', 'static_app_data')[0][0])
 # update_app_data('offline_data', 'cadet_id', '1234')
+# print("rockdell420@gmail.com" in [v[0] for v in query_app_data("Email", "cadet_application_data", "Status", "Cadet")])
+# print(query_app_data('otp_salt', 'cadet_offline_data', 'cadet_email', "rockdell420@gmail.com")[0][0])
+# print(query_app_data("cadet_id", "cadet_offline_data"))
+# print(query_app_data("cadet_id", "cadet_offline_data"))
