@@ -1,5 +1,6 @@
 import mysql.connector
 import bcrypt
+import dataHandler
 
 """
 when adding information to admin database just append the info to info_list in line 13.
@@ -46,7 +47,7 @@ def create_admin(username, password, image_path, admin_name, email_address, mobi
 
     adm_name = ' '.join(list(map(lambda x: x.lower().capitalize(), admin_name.split(" "))))
 
-    profile_photo = img_binary_data(image_path)
+    profile_photo = dataHandler.img_binary_data(image_path)
 
     cursor.execute("INSERT INTO admin_data VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
                    (username, salt, hashed_password, profile_photo, adm_name, email_address, mobile, dob, address,
@@ -75,12 +76,6 @@ def update_password(new_pass):
     db.close()
 
 
-def img_binary_data(path):
-    with open(path, 'rb') as imageFile:
-        binary_data = imageFile.read()
-    return binary_data
-
-
 def fetch_admin_data():
     db = mysql.connector.connect(
         host="localhost",
@@ -106,11 +101,9 @@ def add_admin_to_database():
         data = input(f"{v} : ")
         other_info.append(data)
 
-    if len(img_binary_data(img_path)) <= 100000:
+    if len(dataHandler.img_binary_data(img_path)) <= 100000:
         create_admin(username, password, img_path, other_info[0], other_info[1], other_info[2], other_info[3],
                      other_info[4], other_info[5], other_info[6], other_info[7])
         print('admin created!')
     else:
         print('try again!')
-
-

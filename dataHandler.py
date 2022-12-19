@@ -26,8 +26,16 @@ def primary_form_items():
                   "Height",
                   "Weight",
                   "Date Of Birth",
-                  "Facebook Id"]
+                  "Facebook Id",
+                  "Profile Photo"]
+
     return form_items
+
+
+def img_binary_data(path):
+    with open(path, 'rb') as imageFile:
+        binary_data = imageFile.read()
+    return binary_data
 
 
 def save_offline_data(user_offline_data, id_pass):
@@ -199,7 +207,10 @@ def create_app_data():
             item = '_'.join(item.split(" "))
 
         if item not in existing_cadet_form_items:
-            c.execute(f"ALTER TABLE cadet_application_data ADD COLUMN ({item} VARCHAR(255))")
+            if item != "Profile_Photo":
+                c.execute(f"ALTER TABLE cadet_application_data ADD COLUMN ({item} VARCHAR(255))")
+            else:
+                c.execute(f"ALTER TABLE cadet_application_data ADD COLUMN ({item} MEDIUMBLOB)")
             online_db.commit()
 
     c.execute("CREATE TABLE IF NOT EXISTS notice_board(Notice_Title VARCHAR(255), Notices VARCHAR (999))")
@@ -592,7 +603,6 @@ def add_cadet_info(infolist):
     c.execute(f"INSERT INTO cadet_application_data VALUES ('Pending',{','.join(sign)})", infolist)
     db.commit()
     db.close()
-
 
 # print(query_app_data("application_form", "dynamic_app_data")[0][0])
 # print(query_app_data("*", "dynamic_app_data")[0][0])

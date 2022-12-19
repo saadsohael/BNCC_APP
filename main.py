@@ -16,6 +16,7 @@ from kivymd.uix.label import MDLabel
 from kivymd.uix.list import TwoLineListItem, MDList
 from kivymd.uix.menu import MDDropdownMenu
 from kivymd.uix.textfield import MDTextField
+from kivymd.uix.filemanager import MDFileManager
 from kivy.metrics import sp
 from kivy.animation import Animation
 from kivy.properties import NumericProperty
@@ -115,7 +116,6 @@ class LoginScreen(Screen):
 
     def log_in_btn(self):
         if self.ids.login_label.text == "Admin Login":
-            # self.manager.current = "AdminDash"
             if dataHandler.is_admin(self.ids.username_textfield.text, self.ids.password_textfield.text):
                 if self.ids.remember_check.state == 'down':
                     dataHandler.create_offline_datatable('admin_offline_data', 'admin_id', 'admin_password')
@@ -387,6 +387,11 @@ class ApplyCadetScreen(Screen):
     def __init__(self, **kwargs):
         super(ApplyCadetScreen, self).__init__(**kwargs)
         self.form_inputs = []
+        self.file_explorer = MDFileManager(
+            select_path=self.select_path,
+            exit_manager=self.exit_file_explorer,
+            preview=True,
+        )
 
     # create an application form window with the items in the dynamic (online) database
 
@@ -410,6 +415,9 @@ class ApplyCadetScreen(Screen):
             label = MDLabel(text=f'{v} : ', size_hint_x=0.55)
             if v in ['Cadet Id', 'Cadet Password']:
                 textfield = MDTextField(mode="rectangle", size_hint_x=0.45, hint_text=hintText, disabled=True)
+            elif v == "Profile Photo":
+                textfield = MDRaisedButton(text="Choose Image")
+                textfield.bind(on_release=self.open_file_explorer)
             else:
                 textfield = MDTextField(mode="rectangle", size_hint_x=0.45, hint_text=hintText)
             self.textfields.append(textfield)
@@ -418,11 +426,28 @@ class ApplyCadetScreen(Screen):
             self.form_inputs.append(textfield)
             hintText = ''
 
+    def open_file_explorer(self, instance):
+        self.file_explorer.show('/')
+
+    def select_path(self, path):
+        if len(dataHandler.img_binary_data(path)) <= 60000:
+            for v in self.textfields:
+                if type(v) == MDRaisedButton:
+                    v.text = path
+        self.exit_file_explorer()
+
+    def exit_file_explorer(self):
+        self.file_explorer.close()
+
     def form_filled(self):
         for input_box in self.textfields:
-            if input_box.hint_text != 'auto generated':
-                if input_box.text == '' or input_box.text.isspace():
+            if type(input_box) == MDRaisedButton:
+                if input_box.text == 'Choose Image':
                     return False
+            else:
+                if input_box.hint_text != 'auto generated':
+                    if input_box.text == '' or input_box.text.isspace():
+                        return False
         return True
 
     def confirm_apply_btn(self):
@@ -456,16 +481,21 @@ class ApplyCadetScreen(Screen):
                         form_items.remove(i)
             for v in range(len(cadet_cols)):
                 new_label.insert(v, form_items[form_items.index(cadet_cols[v])])
-                if cadet_cols[v] not in ['Cadet_Id', 'Cadet_Password']:
-                    if cadet_cols[v] not in ['Email', 'Facebook_Id']:
-                        cadet_info_list.insert(v, ' '.join(
-                            [v.capitalize() for v in self.textfields[form_items.index(cadet_cols[v])].text.split(" ")]))
+                if cadet_cols[v] != "Profile_Photo":
+                    if cadet_cols[v] not in ['Cadet_Id', 'Cadet_Password']:
+                        if cadet_cols[v] not in ['Email', 'Facebook_Id']:
+                            cadet_info_list.insert(v, ' '.join(
+                                [v.capitalize() for v in
+                                 self.textfields[form_items.index(cadet_cols[v])].text.split(" ")]))
+                        else:
+                            cadet_info_list.insert(v, self.textfields[form_items.index(cadet_cols[v])].text)
                     else:
-                        cadet_info_list.insert(v, self.textfields[form_items.index(cadet_cols[v])].text)
+                        cadet_info_list.insert(v, cadet_unique_id) if cadet_cols[v] == 'Cadet_Id' \
+                            else cadet_info_list.insert(v, "N/A")
                 else:
-                    cadet_info_list.insert(v, cadet_unique_id) if cadet_cols[
-                                                                      v] == 'Cadet_Id' else cadet_info_list.insert(v,
-                                                                                                                   "N/A")
+                    cadet_info_list.insert(v, dataHandler.img_binary_data(
+                        self.textfields[form_items.index(cadet_cols[v])].text))
+
             if dataHandler.has_internet():
                 if mail_handler.isValidEmail(self.textfields[cadet_cols.index('Email')].text):
                     if dataHandler.query_app_data("*", "cadet_application_data"):
@@ -861,7 +891,7 @@ class ShowApplicantInfoScreen(Screen):
         cadet_cols.insert(0, "Status")
         data = [v for v in dataHandler.query_app_data("*", "cadet_application_data") if (email in v)][0]
         for v in cadet_cols:
-            if v != "Cadet_Password":
+            if v not in ["Cadet_Password", "Profile_Photo"]:
                 label = MDLabel(text=f'{v} : ', size_hint_x=0.55)
                 if v == "Height":
                     label2 = MDLabel(text=f"{data[cadet_cols.index(v)]} inch", size_hint_x=0.45)
@@ -936,16 +966,21 @@ class CadetDash(Screen):
         self.cadet_pass = ''
 
     def show_cadet(self):
-        self.cadet_info = [' '.join(v.split("_")) for v in dataHandler.query_cadet_col_name() if v != "Cadet_Password"]
+        self.cadet_info = [' '.join(v.split("_")) for v in dataHandler.query_cadet_col_name() if
+                           v != "Cadet_Password"]
         cadet_data = [v for v in
                       dataHandler.query_app_data('*', "cadet_application_data", "Cadet_Password", self.cadet_pass)[0] if
-                      v != self.cadet_pass and v != 'Cadet']
+                      v not in [self.cadet_pass, 'Cadet']]
+        cadet_data.remove(cadet_data[self.cadet_info.index("Profile Photo")])
+        self.cadet_info.remove("Profile Photo")
 
         # showing profile photo on app
-        """image = dataHandler.query_admin('profile_photo')
+        image = \
+            dataHandler.query_app_data('Profile_Photo', 'cadet_application_data', 'Cadet_Password', self.cadet_pass)[0][
+                0]
         data = io.BytesIO(image)
         img = CoreImage(data, ext="png").texture
-        self.ids.cadet_profile_photo.texture = img"""
+        self.ids.cadet_profile_photo.texture = img
         self.info_dic = {}
 
         for v in range(len(self.cadet_info)):
