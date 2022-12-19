@@ -124,6 +124,7 @@ class LoginScreen(Screen):
                                               "admin_id")
                     dataHandler.update_app_data('static_app_data', 'remember_admin', True)
                 self.manager.current = "AdminDash"
+                self.manager.get_screen("ShowNoticeScreen").ids.delete_notice_btn.disabled = False
                 self.ids.username_textfield.text = ''
                 self.ids.password_textfield.text = ''
                 self.ids.remember_check.state = 'normal'
@@ -137,7 +138,10 @@ class LoginScreen(Screen):
                                                   self.ids.password_textfield.text,
                                                   "cadet_id")
                         dataHandler.update_app_data('static_app_data', 'remember_cadet', True)
+                    self.manager.get_screen("CadetDash").cadet_pass = self.ids.password_textfield.text
+                    self.manager.get_screen("CadetDash").show_cadet()
                     self.manager.current = "CadetDash"
+                    self.manager.get_screen("ShowNoticeScreen").ids.delete_notice_btn.disabled = True
                     self.ids.username_textfield.text = ''
                     self.ids.password_textfield.text = ''
                     self.ids.remember_check.state = 'normal'
@@ -753,7 +757,6 @@ class AdminProfile(Screen):
         image = dataHandler.query_admin('profile_photo')
         data = io.BytesIO(image)
         img = CoreImage(data, ext="png").texture
-        # self.ids.admin_profile_photo.source = 'a.jpg'
         self.ids.admin_profile_photo.texture = img
         self.info_dic = {}
 
@@ -928,7 +931,39 @@ class CadetsInfoScreen(Screen):
 
 
 class CadetDash(Screen):
-    pass
+    def __init__(self, **kwargs):
+        super(CadetDash, self).__init__(**kwargs)
+        self.cadet_pass = ''
+
+    def show_cadet(self):
+        self.cadet_info = [' '.join(v.split("_")) for v in dataHandler.query_cadet_col_name() if v != "Cadet_Password"]
+        cadet_data = [v for v in
+                      dataHandler.query_app_data('*', "cadet_application_data", "Cadet_Password", self.cadet_pass)[0] if
+                      v != self.cadet_pass and v != 'Cadet']
+
+        # showing profile photo on app
+        """image = dataHandler.query_admin('profile_photo')
+        data = io.BytesIO(image)
+        img = CoreImage(data, ext="png").texture
+        self.ids.cadet_profile_photo.texture = img"""
+        self.info_dic = {}
+
+        for v in range(len(self.cadet_info)):
+            if self.cadet_info[v] == "Facebook Id":
+                self.item = TwoLineListItem(text=self.cadet_info[v], secondary_text=f'facebook.com/{cadet_data[v]}',
+                                            on_press=lambda x: self.show_cadet_data())
+            else:
+                self.item = TwoLineListItem(text=self.cadet_info[v], secondary_text=cadet_data[v],
+                                            on_press=lambda x: self.show_cadet_data())
+            self.item.id = self.item.text
+            self.info_dic[self.item.id] = self.item
+            self.ids.cadet_info.add_widget(self.item)
+
+    def show_cadet_data(self):
+        for v in self.info_dic.values():
+            if v.state == 'down':
+                toast(f'{v.text} : {v.secondary_text}', duration=3)
+
 
 class NoticeScreen(Screen):
 
@@ -952,7 +987,8 @@ class NoticeScreen(Screen):
 
         scroll_view.add_widget(md_list)
         self.add_widget(scroll_view)
-        self.add_widget(action_button)
+        if self.manager.get_screen("LoginScreen").ids.login_label.text == "Admin Login":
+            self.add_widget(action_button)
 
     def create_notice(self, instance):
         self.manager.current = 'CreateNoticeScreen'
@@ -969,12 +1005,13 @@ class NoticeScreen(Screen):
 
 
 class ShowNoticeScreen(Screen):
+
     def __init__(self, **kwargs):
         super(ShowNoticeScreen, self).__init__(**kwargs)
 
         self.title = ''
         self.text = ''
-        self.dialog = MDDialog(title="Are You Sure You Want To Delte This Notice?",
+        self.dialog = MDDialog(title="Are You Sure You Want To Delete This Notice?",
                                size_hint=(None, None),
                                _spacer_top=sp(15),
                                width=(self.width - sp(50)),

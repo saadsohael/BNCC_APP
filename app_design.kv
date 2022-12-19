@@ -275,6 +275,102 @@ WindowManager:
 <CadetDash>:
     name: "CadetDash"
 
+    MDBoxLayout:
+
+        pos_hint: {'center_x':0.48}
+        orientation: 'vertical'
+        padding: 50
+
+
+        MDGridLayout:
+            cols: 1
+            padding: sp(0),sp(30),sp(0),sp(15)
+
+            ScrollView:
+                size_hint : 0.6, None
+                height: root.height - sp(100)
+
+                MDList:
+                    id: cadet_info
+
+        #MDFloatLayout:
+            #size_hint : None, None
+            #size: sp(100),sp(100)
+            #Image:
+                #id: cadet_profile_photo
+                #source : ''
+                #pos: (root.width - (self.width+20), root.height - (self.height + sp(55)))
+
+
+    MDNavigationLayout:
+        ScreenManager:
+            Screen:
+                BoxLayout:
+                    orientation: "vertical"
+                    MDToolbar:
+                        title: "RC BNCC"
+                        elevation: sp(8)
+                        left_action_items: [["menu", lambda x : nav_drawer.set_state("toggle")]]
+
+                        Image:
+                            source: "Bncc_logo.png"
+                            pos: (((self.parent.size[0])/1.5)-20,self.pos[1])
+
+                    Widget:
+
+    MDNavigationDrawer:
+        id: nav_drawer
+        size_hint_x: None
+        width: root.width * (3/4)
+
+        BoxLayout:
+            orientation: "vertical"
+            padding: 30, 60
+            spacing : 20
+
+            MDLabel:
+                text: "Cadet Profile"
+                size_hint_y: None
+                height: self.texture_size[1]
+                padding: (80,20)
+
+            ScrollView:
+                MDList:
+
+                    OneLineListItem:
+                        text: "Profile"
+                        on_release:
+                            root.manager.get_screen("CadetDash").show_cadet()
+                            root.manager.current = "CadetDash"
+
+                    OneLineListItem:
+                        text: "Admin Info"
+                        on_release:
+
+                    OneLineListItem:
+                        text: "Notice Board"
+                        on_release:
+                            root.manager.get_screen("NoticeScreen").notice_dic = {}
+                            root.manager.get_screen("NoticeScreen").show_notices()
+                            root.manager.current = "NoticeScreen"
+                            nav_drawer.set_state("closed")
+
+                    OneLineListItem:
+                        text: "About"
+                        on_release:
+                            root.manager.current = "AboutScreen"
+
+                    OneLineListItem:
+                        text: "Settings"
+                        on_release:
+                            root.manager.current = "SettingsScreen"
+
+                    OneLineListItem:
+                        text: "Log Out"
+                        on_release:
+                            root.manager.current = "LoginScreen"
+                            root.manager.get_screen("CadetDash").ids.nav_drawer.status = 'closed'
+
 
 <ApplyCadetScreen>:
     name: "ApplyCadetScreen"
@@ -336,9 +432,10 @@ WindowManager:
         orientation: 'vertical'
         padding: 50
 
+
         MDGridLayout:
-            cols: 2
-            padding: sp(0),sp(50)
+            cols: 1
+            padding: sp(0),sp(30),sp(0),sp(15)
 
             ScrollView:
                 size_hint : 0.6, None
@@ -347,13 +444,13 @@ WindowManager:
                 MDList:
                     id: admin_info
 
-            MDFloatLayout:
-                size_hint : 0.4, None
-                height: sp(150)
-                Image:
-                    id: admin_profile_photo
-                    source : ''
-                    pos: (root.width - (self.width+20), root.height - (self.height + 80))
+        MDFloatLayout:
+            size_hint : None, None
+            size: sp(100),sp(100)
+            Image:
+                id: admin_profile_photo
+                source : ''
+                pos: (root.width - (self.width+20), root.height - (self.height + sp(55)))
 
 
     MDNavigationLayout:
@@ -369,7 +466,6 @@ WindowManager:
                         Image:
                             source: "Bncc_logo.png"
                             pos: (((self.parent.size[0])/1.5)-20,self.pos[1])
-
 
                     Widget:
 
@@ -415,7 +511,10 @@ WindowManager:
                     OneLineListItem:
                         text: "Notice Board"
                         on_release:
+                            root.manager.get_screen("NoticeScreen").notice_dic = {}
+                            root.manager.get_screen("NoticeScreen").show_notices()
                             root.manager.current = "NoticeScreen"
+                            nav_drawer.set_state("closed")
 
                     OneLineListItem:
                         text: "About"
@@ -541,6 +640,7 @@ WindowManager:
                 font_size: self.width/20
 
     MDIconButton:
+        id: delete_notice_btn
         icon: "delete"
         theme_icon_color: "Custom"
         icon_color: app.theme_cls.primary_color

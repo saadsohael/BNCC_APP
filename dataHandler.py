@@ -605,3 +605,5 @@ def add_cadet_info(infolist):
 # print(query_app_data('otp_salt', 'cadet_offline_data', 'cadet_email', "rockdell420@gmail.com")[0][0])
 # print(query_app_data("cadet_id", "cadet_offline_data"))
 # print(query_app_data("cadet_id", "cadet_offline_data"))
+# print([' '.join(v.split("_")) for v in query_cadet_col_name() if v != "Cadet_Password"])
+# print([v for v in query_app_data('*', "cadet_application_data", "Cadet_Password", 'saad_sohael')[0] if v != 'saad_sohael' and v!= 'Cadet'])
