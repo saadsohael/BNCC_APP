@@ -7,7 +7,6 @@ WindowManager:
     AdminProfile:
     ViewApplicantScreen:
     ShowApplicantInfoScreen:
-    CadetsInfoScreen:
     CadetDash:
     AboutScreen:
     SettingsScreen:
@@ -329,7 +328,7 @@ WindowManager:
             spacing : 20
 
             MDLabel:
-                text: "Cadet Profile"
+                text: "Cadet Dash"
                 size_hint_y: None
                 height: self.texture_size[1]
                 padding: (80,20)
@@ -346,6 +345,8 @@ WindowManager:
                     OneLineListItem:
                         text: "Admin Info"
                         on_release:
+                            root.manager.get_screen("AdminProfile").show_admin()
+                            root.manager.current = "AdminProfile"
 
                     OneLineListItem:
                         text: "Notice Board"
@@ -508,6 +509,7 @@ WindowManager:
                             root.manager.get_screen("ViewApplicantScreen").show_applicants()
                             root.manager.current = "ViewApplicantScreen"
 
+
                     OneLineListItem:
                         text: "Notice Board"
                         on_release:
@@ -565,9 +567,6 @@ WindowManager:
             callback: root.callback
             on_open: root.open()
             on_close: root.close()
-
-<CadetsInfoScreen>:
-    name: "CadetsInfoScreen"
 
 <NoticeScreen>:
     name: "NoticeScreen"

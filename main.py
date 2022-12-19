@@ -29,9 +29,9 @@ dataHandler.create_app_data()  # create static (on device memory) and dynamic (o
 dataHandler.set_database()
 
 under_login_screen = ["AdminDash", "CadetDash", "ApplyCadetScreen", "PasswordRecoveryWindow"]
-under_admin_dash = ["ApplicationFormWindow", "CadetsInfoScreen", "AdminProfile", "ViewApplicantScreen"]
+under_admin_dash = ["ApplicationFormWindow", "ViewApplicantScreen"]
 under_cadet_dash = []
-common_screens = ["NoticeScreen", "AboutScreen", "SettingsScreen"]
+common_screens = ["NoticeScreen", "AboutScreen", "SettingsScreen", "AdminProfile"]
 
 
 class WindowManager(ScreenManager):
@@ -954,10 +954,6 @@ class ShowApplicantInfoScreen(Screen):
 
     def close(self):
         self.ids.floating_btn.size_hint_y = 0.2
-
-
-class CadetsInfoScreen(Screen):
-    pass
 
 
 class CadetDash(Screen):

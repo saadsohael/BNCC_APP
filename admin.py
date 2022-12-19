@@ -11,11 +11,12 @@ finally add the info to cursor.execute() values in line 51.
 
 
 def admin_info():
-    info_list = ['Name', 'Email', 'Mobile', 'DOB', 'Address', 'Blood Group', 'Religion', 'Institution']
+    info_list = ['Name', 'Email', 'Mobile', 'Date Of Birth', 'Address', 'Blood Group', 'Religion', 'Institution']
     return info_list
 
 
-def create_admin(username, password, image_path, admin_name, email_address, mobile, dob, address, blood_group, religion,
+def create_admin(username, password, image_path, admin_name, email_address, mobile, date_of_birth, address, blood_group,
+                 religion,
                  institution):
     db = mysql.connector.connect(
         host="localhost",
@@ -33,7 +34,7 @@ def create_admin(username, password, image_path, admin_name, email_address, mobi
                     admin_name VARCHAR(99),
                     admin_email VARCHAR(255),
                     admin_mobile VARCHAR(99),
-                    admin_dob VARCHAR(99),
+                    admin_date_of_birth VARCHAR(99),
                     admin_address VARCHAR(255),
                     admin_blood_group VARCHAR(99),
                     admin_religion VARCHAR(99),
@@ -50,7 +51,8 @@ def create_admin(username, password, image_path, admin_name, email_address, mobi
     profile_photo = dataHandler.img_binary_data(image_path)
 
     cursor.execute("INSERT INTO admin_data VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)",
-                   (username, salt, hashed_password, profile_photo, adm_name, email_address, mobile, dob, address,
+                   (username, salt, hashed_password, profile_photo, adm_name, email_address, mobile, date_of_birth,
+                    address,
                     blood_group, religion, institution))
     db.commit()
 
