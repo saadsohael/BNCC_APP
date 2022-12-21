@@ -197,7 +197,7 @@ def send_cadet_id_pass(no_use_argument, cadet_email):
         text = msg.as_string()
 
         # sending the mail
-        s.sendmail(fromaddr, cadet_email, text)
+        # s.sendmail(fromaddr, cadet_email, text)
 
         db = mysql.connector.connect(
             host="localhost",

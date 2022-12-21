@@ -29,7 +29,7 @@ dataHandler.create_app_data()  # create static (on device memory) and dynamic (o
 dataHandler.set_database()
 
 under_login_screen = ["AdminDash", "CadetDash", "ApplyCadetScreen", "PasswordRecoveryWindow"]
-under_admin_dash = ["ApplicationFormWindow", "ViewApplicantScreen"]
+under_admin_dash = ["ApplicationFormWindow"]
 under_cadet_dash = []
 common_screens = ["NoticeScreen", "AboutScreen", "SettingsScreen", "AdminProfile"]
 
@@ -79,6 +79,9 @@ class LoginScreen(Screen):
                 else:
                     self.open_dialog('Are you sure you want to go back?\n  You will be logged out!')
 
+            elif self.manager.current == "ViewApplicantScreen":
+                self.manager.current = "AdminDash"
+
             # otherwise current screen will be replaced with previous screen
             else:
                 self.go_back()
@@ -96,6 +99,9 @@ class LoginScreen(Screen):
 
             if self.manager.current == "ApplyCadetScreen":  # clear form widgets otherwise it will keep multiplying!!!
                 self.manager.get_screen("ApplyCadetScreen").ids.application_form.clear_widgets()
+
+            elif self.manager.current == "CadetDash":
+                self.manager.get_screen("CadetDash").ids.cadet_info.clear_widgets()
 
             self.manager.current = "LoginScreen"
             self.manager.transition.direction = 'right'
@@ -120,8 +126,7 @@ class LoginScreen(Screen):
                 if self.ids.remember_check.state == 'down':
                     dataHandler.create_offline_datatable('admin_offline_data', 'admin_id', 'admin_password')
                     dataHandler.remember_user("admin_offline_data", self.ids.username_textfield.text,
-                                              self.ids.password_textfield.text,
-                                              "admin_id")
+                                              self.ids.password_textfield.text, "admin_id")
                     dataHandler.update_app_data('static_app_data', 'remember_admin', True)
                 self.manager.current = "AdminDash"
                 self.manager.get_screen("ShowNoticeScreen").ids.delete_notice_btn.disabled = False
@@ -135,8 +140,7 @@ class LoginScreen(Screen):
                 if dataHandler.is_cadet(self.ids.username_textfield.text, self.ids.password_textfield.text):
                     if self.ids.remember_check.state == 'down':
                         dataHandler.remember_user("cadet_offline_data", self.ids.username_textfield.text,
-                                                  self.ids.password_textfield.text,
-                                                  "cadet_id")
+                                                  self.ids.password_textfield.text, "cadet_id")
                         dataHandler.update_app_data('static_app_data', 'remember_cadet', True)
                     self.manager.get_screen("CadetDash").cadet_pass = self.ids.password_textfield.text
                     self.manager.get_screen("CadetDash").show_cadet()
@@ -207,9 +211,9 @@ class LoginScreen(Screen):
 
         elif self.manager.current == "ShowApplicantInfoScreen":
             if self.manager.get_screen("ShowApplicantInfoScreen").ids.floating_btn.state == 'close':
-                self.manager.get_screen("ShowApplicantInfoScreen").ids.applicant_info_grid.clear_widgets()
                 self.manager.get_screen("ViewApplicantScreen").applicants_dic = {}
-                self.manager.get_screen("ViewApplicantScreen").show_applicants()
+                self.manager.get_screen('ShowApplicantInfoScreen').ids.cadet_info.clear_widgets()
+                self.manager.get_screen("ViewApplicantScreen").show_applicant_list()
                 self.manager.current = "ViewApplicantScreen"
             else:
                 self.manager.get_screen("ShowApplicantInfoScreen").ids.floating_btn.close_stack()
@@ -387,10 +391,12 @@ class ApplyCadetScreen(Screen):
     def __init__(self, **kwargs):
         super(ApplyCadetScreen, self).__init__(**kwargs)
         self.form_inputs = []
+        self.correct_dob_input = False
+        self.image_path = ''
         self.file_explorer = MDFileManager(
             select_path=self.select_path,
             exit_manager=self.exit_file_explorer,
-            preview=True,
+            preview=False,
         )
 
     # create an application form window with the items in the dynamic (online) database
@@ -416,7 +422,7 @@ class ApplyCadetScreen(Screen):
             if v in ['Cadet Id', 'Cadet Password']:
                 textfield = MDTextField(mode="rectangle", size_hint_x=0.45, hint_text=hintText, disabled=True)
             elif v == "Profile Photo":
-                textfield = MDRaisedButton(text="Choose Image")
+                textfield = MDRaisedButton(text="Choose Image", size_hint_x=0.45)
                 textfield.bind(on_release=self.open_file_explorer)
             else:
                 textfield = MDTextField(mode="rectangle", size_hint_x=0.45, hint_text=hintText)
@@ -430,27 +436,69 @@ class ApplyCadetScreen(Screen):
         self.file_explorer.show('/')
 
     def select_path(self, path):
-        if len(dataHandler.img_binary_data(path)) <= 60000:
-            for v in self.textfields:
-                if type(v) == MDRaisedButton:
-                    v.text = path
-        self.exit_file_explorer()
+        try:
+            if dataHandler.is_image(path):
+                if len(dataHandler.img_binary_data(path)) <= 60000:
+                    self.image_path = path
+                    for v in self.textfields:
+                        if type(v) == MDRaisedButton:
+                            v.text = f'.../{self.image_path.split("/")[-1][:-10:-1][::-1]}'
+                    self.file_explorer.close()
+                else:
+                    toast("Please Choose An Image less than or equal 60kb")
+            else:
+                toast("Please Choose An Image less than or equal 60kb")
+        except IsADirectoryError:
+            toast('Please Select A Correct Image less than or equal 60kb')
 
-    def exit_file_explorer(self):
+    def exit_file_explorer(self, instance):
         self.file_explorer.close()
 
     def form_filled(self):
-        for input_box in self.textfields:
-            if type(input_box) == MDRaisedButton:
-                if input_box.text == 'Choose Image':
-                    return False
-            else:
-                if input_box.hint_text != 'auto generated':
-                    if input_box.text == '' or input_box.text.isspace():
+        if self.correct_dob_input:
+            for input_box in self.textfields:
+                if type(input_box) == MDRaisedButton:
+                    if input_box.text == 'Choose Image':
                         return False
-        return True
+                else:
+                    if input_box.hint_text != 'auto generated':
+                        if input_box.text == '' or input_box.text.isspace():
+                            return False
+                    if input_box.hint_text in ["in inch", "in kg"]:
+                        try:
+                            int(input_box.text)
+                        except:
+                            return False
+            return True
+        else:
+            return False
 
     def confirm_apply_btn(self):
+
+        for v in self.textfields:
+            if type(v) != MDRaisedButton:
+                if v.hint_text == "DD/MM/YYYY":
+                    dob = v.text.split("/")
+                    try:
+                        if int(time.asctime().split(" ")[-1]) - int(dob[2]) >= 14:
+                            if len(dob[0]) == 2 and len(dob[1]) == 2 and len(dob[2]) == 4:
+                                if dob[1] in ["01", "03", "05", "07", "08", "10", "12"] and 1 <= int(dob[0]) <= 31:
+                                    self.correct_dob_input = True
+                                elif dob[1] in ["04", "06", "09", "11"] and 1 <= int(dob[0]) <= 30:
+                                    self.correct_dob_input = True
+                                elif 1 <= int(dob[0]) <= 28 and dob[1] == "02" and int(dob[2]) % 4 != 0:
+                                    self.correct_dob_input = True
+                                elif 1 <= int(dob[0]) <= 29 and dob[1] == "02" and int(dob[2]) % 4 == 0:
+                                    self.correct_dob_input = True
+                                else:
+                                    self.correct_dob_input = False
+                            else:
+                                self.correct_dob_input = False
+                        else:
+                            self.correct_dob_input = False
+                    except ValueError and IndexError:
+                        self.correct_dob_input = False
+
         new_label = []
         cadet_info_list = []
         temp_list = []
@@ -493,8 +541,7 @@ class ApplyCadetScreen(Screen):
                         cadet_info_list.insert(v, cadet_unique_id) if cadet_cols[v] == 'Cadet_Id' \
                             else cadet_info_list.insert(v, "N/A")
                 else:
-                    cadet_info_list.insert(v, dataHandler.img_binary_data(
-                        self.textfields[form_items.index(cadet_cols[v])].text))
+                    cadet_info_list.insert(v, dataHandler.img_binary_data(self.image_path))
 
             if dataHandler.has_internet():
                 if mail_handler.isValidEmail(self.textfields[cadet_cols.index('Email')].text):
@@ -515,7 +562,7 @@ class ApplyCadetScreen(Screen):
             else:
                 toast("Please Check Your Internet Connection!")
         else:
-            toast("Please fill up all the information!")
+            toast("Please fill up the form correctly!")
 
 
 class AdminDash(Screen):
@@ -810,7 +857,7 @@ class ViewApplicantScreen(Screen):
         self.applicant_type = "Pending"
         self.applicants_dic = {}
 
-    def show_applicants(self):
+    def show_applicant_list(self):
         scroll_view = ScrollView()
         md_list = MDList()
         applicants = dataHandler.query_app_data("*", "cadet_application_data", "Status", self.applicant_type)
@@ -821,8 +868,7 @@ class ViewApplicantScreen(Screen):
                         applicants.index(applicant)][0],
                     secondary_text=
                     dataHandler.query_app_data('Email', 'cadet_application_data', "Status", self.applicant_type)[
-                        applicants.index(applicant)][0],
-                    on_release=lambda x: self.view_applicant())
+                        applicants.index(applicant)][0], on_release=lambda x: self.view_applicant())
                 applicant_item.id = applicant_item.text
                 self.applicants_dic[applicant_item.id] = applicant_item
                 md_list.add_widget(applicant_item)
@@ -862,7 +908,7 @@ class ViewApplicantScreen(Screen):
                 self.manager.get_screen('ShowApplicantInfoScreen').ids.floating_btn.data = self.manager.get_screen(
                     'ShowApplicantInfoScreen').data
                 self.manager.get_screen('ShowApplicantInfoScreen').cadet_email_address = applicant.secondary_text
-                self.manager.get_screen('ShowApplicantInfoScreen').show_applicant(applicant.secondary_text)
+                self.manager.get_screen('ShowApplicantInfoScreen').show_applicant()
                 self.manager.get_screen('ShowApplicantInfoScreen').ids.floating_btn.close_stack()
                 self.manager.current = 'ShowApplicantInfoScreen'
                 self.clear_widgets()
@@ -886,21 +932,39 @@ class ShowApplicantInfoScreen(Screen):
             'Cancel': 'close',
         }
 
-    def show_applicant(self, email):
-        cadet_cols = dataHandler.query_cadet_col_name()
-        cadet_cols.insert(0, "Status")
-        data = [v for v in dataHandler.query_app_data("*", "cadet_application_data") if (email in v)][0]
-        for v in cadet_cols:
-            if v not in ["Cadet_Password", "Profile_Photo"]:
-                label = MDLabel(text=f'{v} : ', size_hint_x=0.55)
-                if v == "Height":
-                    label2 = MDLabel(text=f"{data[cadet_cols.index(v)]} inch", size_hint_x=0.45)
-                elif v == "Weight":
-                    label2 = MDLabel(text=f"{data[cadet_cols.index(v)]} kg", size_hint_x=0.45)
-                else:
-                    label2 = MDLabel(text=data[cadet_cols.index(v)], size_hint_x=0.45)
-                self.ids.applicant_info_grid.add_widget(label)
-                self.ids.applicant_info_grid.add_widget(label2)
+    def show_applicant(self):
+        self.cadet_cols = [(' '.join(v.split("_"))) for v in dataHandler.query_cadet_col_name()]
+        self.cadet_cols.insert(0, "Status")
+        cadet_data = [i for i in
+                      [v for v in dataHandler.query_app_data("*", "cadet_application_data") if
+                       (self.cadet_email_address in v)][0]]
+        cadet_data.remove(cadet_data[self.cadet_cols.index("Profile Photo")])
+        self.cadet_cols.remove("Profile Photo")
+
+        # showing profile photo on app
+        image = \
+            dataHandler.query_app_data('Profile_Photo', 'cadet_application_data', 'Email', self.cadet_email_address)[0][
+                0]
+        data = io.BytesIO(image)
+        img = CoreImage(data, ext="png").texture
+        self.ids.cadet_profile_photo.texture = img
+        self.info_dic = {}
+
+        for v in range(len(self.cadet_cols)):
+            if self.cadet_cols[v] == "Facebook Id":
+                self.item = TwoLineListItem(text=self.cadet_cols[v], secondary_text=f'facebook.com/{cadet_data[v]}',
+                                            on_press=lambda x: self.show_cadet_data())
+            else:
+                self.item = TwoLineListItem(text=self.cadet_cols[v], secondary_text=cadet_data[v],
+                                            on_press=lambda x: self.show_cadet_data())
+            self.item.id = self.item.text
+            self.info_dic[self.item.id] = self.item
+            self.ids.cadet_info.add_widget(self.item)
+
+    def show_cadet_data(self):
+        for v in self.info_dic.values():
+            if v.state == 'down':
+                toast(f'{v.text} : {v.secondary_text}', duration=3)
 
     def callback(self, instance):
         if instance.icon == 'check':
@@ -924,8 +988,7 @@ class ShowApplicantInfoScreen(Screen):
                     toast("Please Check Your Internet Connection!")
             self.manager.current = "ViewApplicantScreen"
             self.manager.get_screen("ViewApplicantScreen").applicants_dic = {}
-            self.manager.get_screen("ViewApplicantScreen").show_applicants()
-            self.ids.applicant_info_grid.clear_widgets()
+            self.manager.get_screen("ViewApplicantScreen").show_applicant_list()
 
         elif instance.icon == 'delete':
             self.dialog.open()
@@ -940,9 +1003,8 @@ class ShowApplicantInfoScreen(Screen):
     def remove_item(self, instance):
         dataHandler.delete_query('cadet_application_data', 'Email', self.cadet_email_address)
         self.manager.get_screen("ViewApplicantScreen").applicants_dic = {}
-        self.manager.get_screen("ViewApplicantScreen").show_applicants()
+        self.manager.get_screen("ViewApplicantScreen").show_applicant_list()
         self.manager.current = "ViewApplicantScreen"
-        self.ids.applicant_info_grid.clear_widgets()
         toast("Cadet Application Approved!")
         self.dialog.dismiss()
 
@@ -962,13 +1024,13 @@ class CadetDash(Screen):
         self.cadet_pass = ''
 
     def show_cadet(self):
-        self.cadet_info = [' '.join(v.split("_")) for v in dataHandler.query_cadet_col_name() if
+        self.cadet_cols = [' '.join(v.split("_")) for v in dataHandler.query_cadet_col_name() if
                            v != "Cadet_Password"]
         cadet_data = [v for v in
                       dataHandler.query_app_data('*', "cadet_application_data", "Cadet_Password", self.cadet_pass)[0] if
                       v not in [self.cadet_pass, 'Cadet']]
-        cadet_data.remove(cadet_data[self.cadet_info.index("Profile Photo")])
-        self.cadet_info.remove("Profile Photo")
+        cadet_data.remove(cadet_data[self.cadet_cols.index("Profile Photo")])
+        self.cadet_cols.remove("Profile Photo")
 
         # showing profile photo on app
         image = \
@@ -979,12 +1041,12 @@ class CadetDash(Screen):
         self.ids.cadet_profile_photo.texture = img
         self.info_dic = {}
 
-        for v in range(len(self.cadet_info)):
-            if self.cadet_info[v] == "Facebook Id":
-                self.item = TwoLineListItem(text=self.cadet_info[v], secondary_text=f'facebook.com/{cadet_data[v]}',
+        for v in range(len(self.cadet_cols)):
+            if self.cadet_cols[v] == "Facebook Id":
+                self.item = TwoLineListItem(text=self.cadet_cols[v], secondary_text=f'facebook.com/{cadet_data[v]}',
                                             on_press=lambda x: self.show_cadet_data())
             else:
-                self.item = TwoLineListItem(text=self.cadet_info[v], secondary_text=cadet_data[v],
+                self.item = TwoLineListItem(text=self.cadet_cols[v], secondary_text=cadet_data[v],
                                             on_press=lambda x: self.show_cadet_data())
             self.item.id = self.item.text
             self.info_dic[self.item.id] = self.item

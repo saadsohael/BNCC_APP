@@ -46,27 +46,6 @@ def save_offline_data(user_offline_data, id_pass):
     db.close()
 
 
-def remember_user(user_offline_data, user_username, user_password, user_id):
-    db = sqlite3.connect("app_data.db")
-    c = db.cursor()
-    c.execute(f"SELECT * FROM {user_offline_data}")
-    data = c.fetchall()
-    db.close()
-    if data:
-        conditions = [user_username.isnumeric() and
-                      query_app_data(user_id, user_offline_data)[0][0].isnumeric(),
-                      user_username.isalnum() and
-                      query_app_data(user_id, user_username)[0][0].isalnum()]
-        if any(conditions):
-            update_app_data(user_offline_data, 'cadet_password',
-                            user_password, user_id, user_username)
-        else:
-            delete_query(user_offline_data, user_id, query_app_data(user_id, user_offline_data)[0][0])
-            save_offline_data(user_offline_data, [user_username, user_password])
-    else:
-        save_offline_data(user_offline_data, [user_username, user_password])
-
-
 def update_app_data(table_name, column_name, new_data, where=None, condition=None):
     if condition is None:
         if table_name in ['static_app_data', "admin_offline_data", "cadet_offline_data"]:
@@ -604,6 +583,29 @@ def add_cadet_info(infolist):
     db.commit()
     db.close()
 
+
+def remember_user(user_offline_data, user_username, user_password, user_id):
+    db = sqlite3.connect("app_data.db")
+    c = db.cursor()
+    c.execute(f"SELECT * FROM {user_offline_data}")
+    data = c.fetchall()
+    db.close()
+    if data:
+        delete_query(user_offline_data, user_id, query_app_data(user_id, user_offline_data)[0][0])
+        save_offline_data(user_offline_data, [user_username, user_password])
+    else:
+        save_offline_data(user_offline_data, [user_username, user_password])
+
+
+def is_image(path):
+    extensions = [".jpg", ".jpeg", ".png"]
+    for extension in extensions:
+        if extension in path.split("/")[-1]:
+            return True
+    return False
+
+
+# remember_user('cadet_offline_data', '105232', '1E2jWKKD', 'cadet_id')
 # print(query_app_data("application_form", "dynamic_app_data")[0][0])
 # print(query_app_data("*", "dynamic_app_data")[0][0])
 # print(query_app_data("theme_color", "static_app_data")[0][0])
@@ -617,3 +619,28 @@ def add_cadet_info(infolist):
 # print(query_app_data("cadet_id", "cadet_offline_data"))
 # print([' '.join(v.split("_")) for v in query_cadet_col_name() if v != "Cadet_Password"])
 # print([v for v in query_app_data('*', "cadet_application_data", "Cadet_Password", 'saad_sohael')[0] if v != 'saad_sohael' and v!= 'Cadet'])
+
+"""
+        cadet_cols = dataHandler.query_cadet_col_name()
+        cadet_cols.insert(0, "Status")
+        data = [v for v in dataHandler.query_app_data("*", "cadet_application_data") if (email in v)][0]
+        for v in cadet_cols:
+            if v not in ["Cadet_Password", "Profile_Photo"]:
+                label = MDLabel(text=f'{v} : ', size_hint_x=0.55)
+                if v == "Height":
+                    label2 = MDLabel(text=f"{data[cadet_cols.index(v)]} inch", size_hint_x=0.45)
+                elif v == "Weight":
+                    label2 = MDLabel(text=f"{data[cadet_cols.index(v)]} kg", size_hint_x=0.45)
+                else:
+                    label2 = MDLabel(text=data[cadet_cols.index(v)], size_hint_x=0.45)
+                self.ids.applicant_info_grid.add_widget(label)
+                self.ids.applicant_info_grid.add_widget(label2)"""
+# delete_query('cadet_application_data','Name','Monoara')
+# cadet_cols = [(' '.join(v.split("_"))) for v in query_cadet_col_name()]
+# cadet_cols.insert(0, "Status")
+# cadet_data = [i for i in [v for v in query_app_data("*", "cadet_application_data") if ("sumaya.raj.bd@gmail.com" in v)][0]]
+# cadet_data.remove(cadet_data[cadet_cols.index("Profile Photo")])
+# cadet_cols.remove('Profile Photo')
+# print(cadet_cols)
+# print(cadet_data)
+

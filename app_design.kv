@@ -159,7 +159,7 @@ WindowManager:
                 root.manager.get_screen("ViewApplicantScreen").clear_widgets()
                 root.manager.get_screen("ViewApplicantScreen").applicants_dic = {}
                 root.manager.get_screen("ViewApplicantScreen").applicant_type = "Pending"
-                root.manager.get_screen("ViewApplicantScreen").show_applicants()
+                root.manager.get_screen("ViewApplicantScreen").show_applicant_list()
                 root.manager.current = "ViewApplicantScreen"
 
         MDRaisedButton:
@@ -177,7 +177,7 @@ WindowManager:
                 root.manager.get_screen("ViewApplicantScreen").clear_widgets()
                 root.manager.get_screen("ViewApplicantScreen").applicants_dic = {}
                 root.manager.get_screen("ViewApplicantScreen").applicant_type = "Approved"
-                root.manager.get_screen("ViewApplicantScreen").show_applicants()
+                root.manager.get_screen("ViewApplicantScreen").show_applicant_list()
                 root.manager.current = "ViewApplicantScreen"
 
         MDRaisedButton:
@@ -243,7 +243,7 @@ WindowManager:
                             root.manager.get_screen("ViewApplicantScreen").clear_widgets()
                             root.manager.get_screen("ViewApplicantScreen").applicants_dic = {}
                             root.manager.get_screen("ViewApplicantScreen").applicant_type = "Cadet"
-                            root.manager.get_screen("ViewApplicantScreen").show_applicants()
+                            root.manager.get_screen("ViewApplicantScreen").show_applicant_list()
                             root.manager.current = "ViewApplicantScreen"
 
                     OneLineListItem:
@@ -340,6 +340,7 @@ WindowManager:
                         text: "Profile"
                         on_release:
                             root.manager.get_screen("CadetDash").show_cadet()
+                            nav_drawer.set_state("close")
                             root.manager.current = "CadetDash"
 
                     OneLineListItem:
@@ -506,7 +507,7 @@ WindowManager:
                             root.manager.get_screen("ViewApplicantScreen").clear_widgets()
                             root.manager.get_screen("ViewApplicantScreen").applicants_dic = {}
                             root.manager.get_screen("ViewApplicantScreen").applicant_type = "Cadet"
-                            root.manager.get_screen("ViewApplicantScreen").show_applicants()
+                            root.manager.get_screen("ViewApplicantScreen").show_applicant_list()
                             root.manager.current = "ViewApplicantScreen"
 
 
@@ -544,20 +545,20 @@ WindowManager:
     MDBoxLayout:
         id: applicant_info_box
         size_hint_y: None
-        height: root.height - sp(25)
+        height: root.height
         orientation: 'vertical'
 
-        ScrollView:
-            do_scroll_x: False
-            do_scroll_y: True
-            MDGridLayout:
-                id: applicant_info_grid
-                cols: 2
-                size_hint: None, None
-                size: ((root.width - sp(30)),self.minimum_height)
-                pos_hint_y: 1
-                spacing: 125
-                padding: 40, 50, 0, 50
+
+        MDGridLayout:
+            cols: 1
+            padding: sp(0),sp(30),sp(0),sp(15)
+
+            ScrollView:
+                size_hint : 0.6, None
+                height: root.height - sp(100)
+
+                MDList:
+                    id: cadet_info
 
         MDFloatingActionButtonSpeedDial:
             id: floating_btn
@@ -567,6 +568,15 @@ WindowManager:
             callback: root.callback
             on_open: root.open()
             on_close: root.close()
+
+        MDFloatLayout:
+            size_hint : None, None
+            size: sp(100),sp(100)
+            Image:
+                id: cadet_profile_photo
+                source : ''
+                pos: (root.width - (self.width+20), root.height - (self.height + sp(50)))
+
 
 <NoticeScreen>:
     name: "NoticeScreen"
