@@ -147,11 +147,16 @@ WindowManager:
     name: "AdminDash"
 
     MDGridLayout:
+
         cols: 1
         rows: 4
         spacing: 40
         padding: 20
-        pos: (root.width//2 - (self.width//2 - sp(60)), root.height//2 - self.height+sp(90))
+        adaptive_height: True
+        adaptive_width: True
+        pos_hint: {"center_x":0.5,"center_y":0.5}
+        valign: "middle"
+
         MDRaisedButton:
             text: "View Applicants"
             md_bg_color: utils.get_color_from_hex("#3067ddff")
@@ -234,6 +239,7 @@ WindowManager:
                         text: "Profile"
                         on_release:
                             root.manager.get_screen("AdminProfile").show_admin()
+                            root.manager.get_screen("AdminProfile").set_navigation()
                             root.manager.current = "AdminProfile"
                             nav_drawer.set_state("closed")
 
@@ -249,6 +255,9 @@ WindowManager:
                     OneLineListItem:
                         text: "Notice Board"
                         on_release:
+                            #if root.manager.get_screen("AdminProfile").ids.nav_dash.text == "Admin Dash": \
+                            #root.manager.get_screen("NoticeScreen").add_widget(root.manager.get_screen("NoticeScreen").action_button);
+
                             root.manager.get_screen("NoticeScreen").notice_dic = {}
                             root.manager.get_screen("NoticeScreen").show_notices()
                             root.manager.current = "NoticeScreen"
@@ -268,9 +277,11 @@ WindowManager:
                     OneLineListItem:
                         text: "Log Out"
                         on_release:
-                            root.manager.current = "LoginScreen"
-                            root.manager.get_screen("AdminDash").ids.nav_drawer.status = 'closed'
                             nav_drawer.set_state("closed")
+                            root.manager.get_screen("AdminDash").ids.nav_drawer.set_state("closed")
+                            root.manager.get_screen("CadetDash").ids.nav_drawer.set_state("closed")
+                            root.manager.get_screen("ShowNoticeScreen").remove_del_btn()
+                            root.manager.current = "LoginScreen"
 <CadetDash>:
     name: "CadetDash"
 
@@ -340,14 +351,16 @@ WindowManager:
                         text: "Profile"
                         on_release:
                             root.manager.get_screen("CadetDash").show_cadet()
-                            nav_drawer.set_state("close")
+                            nav_drawer.set_state("closed")
                             root.manager.current = "CadetDash"
 
                     OneLineListItem:
                         text: "Admin Info"
                         on_release:
                             root.manager.get_screen("AdminProfile").show_admin()
+                            root.manager.get_screen("AdminProfile").set_navigation()
                             root.manager.current = "AdminProfile"
+                            nav_drawer.set_state("closed")
 
                     OneLineListItem:
                         text: "Notice Board"
@@ -370,8 +383,10 @@ WindowManager:
                     OneLineListItem:
                         text: "Log Out"
                         on_release:
+                            nav_drawer.set_state("closed")
+                            root.manager.get_screen("AdminDash").ids.nav_drawer.set_state("closed")
+                            root.manager.get_screen("CadetDash").ids.nav_drawer.set_state("closed")
                             root.manager.current = "LoginScreen"
-                            root.manager.get_screen("CadetDash").ids.nav_drawer.status = 'closed'
 
 
 <ApplyCadetScreen>:
@@ -482,7 +497,7 @@ WindowManager:
             spacing : 20
 
             MDLabel:
-                text: "Admin Dash"
+                id: nav_label
                 size_hint_y: None
                 height: self.texture_size[1]
                 padding: (80,20)
@@ -490,30 +505,45 @@ WindowManager:
             ScrollView:
                 MDList:
                     OneLineListItem:
-                        text: "Dash"
+                        id: nav_dash
                         on_release:
-                            nav_drawer.set_state("closed")
-                            root.manager.current = "AdminDash"
+                            if nav_label.text == "Admin Dash": \
+                            nav_drawer.set_state("closed"); \
+                            root.manager.current = "AdminDash";
 
                     OneLineListItem:
+                        id: nav_profile
                         text: "Profile"
                         on_release:
-                            root.manager.get_screen("AdminProfile").show_admin()
-                            root.manager.current = "AdminProfile"
+                            if nav_dash.text == "Dash": \
+                            root.manager.get_screen("AdminProfile").set_navigation();\
+                            root.manager.get_screen("AdminProfile").show_admin();\
+                            root.manager.current = "AdminProfile";
+                            else:\
+                            nav_drawer.set_state("closed");\
+                            root.manager.current = "CadetDash";
+
 
                     OneLineListItem:
-                        text: "Cadets Info"
+                        id: nav_user_info
                         on_release:
-                            root.manager.get_screen("ViewApplicantScreen").clear_widgets()
-                            root.manager.get_screen("ViewApplicantScreen").applicants_dic = {}
-                            root.manager.get_screen("ViewApplicantScreen").applicant_type = "Cadet"
-                            root.manager.get_screen("ViewApplicantScreen").show_applicant_list()
-                            root.manager.current = "ViewApplicantScreen"
+                            if self.text == "Cadets Info": \
+                            root.manager.get_screen("ViewApplicantScreen").clear_widgets();\
+                            root.manager.get_screen("ViewApplicantScreen").applicants_dic = {};\
+                            root.manager.get_screen("ViewApplicantScreen").applicant_type = "Cadet";\
+                            root.manager.get_screen("ViewApplicantScreen").show_applicant_list();\
+                            root.manager.current = "ViewApplicantScreen";
+                            else:\
+                            nav_drawer.set_state("closed");
 
 
                     OneLineListItem:
+                        id: nav_notice_board
                         text: "Notice Board"
                         on_release:
+                            #if nav_dash.text == "Admin Dash": \
+                            #root.manager.get_screen("NoticeScreen").add_widget(root.manager.get_screen("NoticeScreen").action_button);
+
                             root.manager.get_screen("NoticeScreen").notice_dic = {}
                             root.manager.get_screen("NoticeScreen").show_notices()
                             root.manager.current = "NoticeScreen"
@@ -525,6 +555,7 @@ WindowManager:
                             root.manager.current = "AboutScreen"
 
                     OneLineListItem:
+                        id: nav_settings
                         text: "Settings"
                         on_release:
                             root.manager.current = "SettingsScreen"
@@ -532,8 +563,12 @@ WindowManager:
                     OneLineListItem:
                         text: "Log Out"
                         on_release:
+                            nav_drawer.set_state("closed")
+                            root.manager.get_screen("AdminDash").ids.nav_drawer.set_state("closed")
+                            root.manager.get_screen("CadetDash").ids.nav_drawer.set_state("closed")
                             root.manager.current = "LoginScreen"
-                            root.manager.get_screen("AdminDash").ids.nav_drawer.status = 'closed'
+                            if nav_dash.text == "Admin Dash":\
+                            root.manager.get_screen("ShowNoticeScreen").remove_del_btn()
 
 
 <ViewApplicantScreen>:
@@ -646,16 +681,7 @@ WindowManager:
                 height: self.texture_size[1]
                 text_size: self.width, None
                 text: ''
-                font_size: self.width/20
-
-    MDIconButton:
-        id: delete_notice_btn
-        icon: "delete"
-        theme_icon_color: "Custom"
-        icon_color: app.theme_cls.primary_color
-        pos_hint:{'center_x':0.9, 'center_y':0.92}
-        on_release:
-            root.dialog.open()
+                font_size: self.width/15
 
 <AboutScreen>:
     name: "AboutScreen"
@@ -666,7 +692,6 @@ WindowManager:
 
         MDLabel:
             text: "Developer"
-            #pos_hint: {"center_x":0.5,"center_y":0.5}
             halign: 'center'
             valign: 'middle'
 
@@ -674,13 +699,11 @@ WindowManager:
             text: "Saad Ibne Sohael"
             halign: 'center'
             valign: 'middle'
-            #pos_hint: {"center_x":0.5,"center_y":0.5}
 
         MDLabel:
             text: "Contact"
             halign: 'center'
             valign: 'middle'
-            #pos_hint: {"center_x":0.5,"center_y":0.5}
 
         MDGridLayout:
             cols: 3
@@ -713,7 +736,8 @@ WindowManager:
 <SettingsScreen>:
     name: "SettingsScreen"
 
-    MDBoxLayout:
+    MDCard:
+        orientation: "vertical"
 
         ScrollView:
             MDList:
@@ -734,12 +758,14 @@ WindowManager:
                         theme_text_color: "Custom"
                         md_bg_color: [1,0,0,0]
 
+
 <ApplicationFormWindow>:
     name: "ApplicationFormWindow"
 
-    MDBoxLayout:
-
-        pos_hint: {'center_x':0.48}
+    MDCard:
+        pos_hint: {'center_x':0.5, 'center_y':0.6}
+        size_hint: None, None
+        size: root.width - sp(100),root.height - sp(150)
         orientation: 'vertical'
         padding: 50
 
@@ -752,32 +778,31 @@ WindowManager:
                     cols: 1
                     size_hint: None, None
                     size: ((root.width - sp(30)),self.minimum_height)
-                    pos_hint_y: 1
                     spacing: 60
-                    padding: 18
 
-        MDGridLayout:
-            cols: 2
-            rows: 1
-            size_hint_y : 0.1
-            padding: 10,10
-            spacing : 30
+    MDGridLayout:
+        cols: 2
+        rows: 1
+        pos_hint: {"center_x":0.5,"center_y":0.1}
+        adaptive_height: True
+        adaptive_width: True
+        spacing: 30
 
-            MDRectangleFlatButton:
-                text: "Add or Edit Items"
-                on_release:
-                    root.manager.get_screen("EditFormItemWindow").ids.drop_item.text = root.manager.get_screen("EditFormItemWindow").form_items_names[0]
-                    root.manager.current = 'EditFormItemWindow'
+        MDRectangleFlatButton:
+            text: "Add or Edit Items"
+            on_release:
+                root.manager.get_screen("EditFormItemWindow").ids.drop_item.text = root.manager.get_screen("EditFormItemWindow").form_items_names[0]
+                root.manager.current = 'EditFormItemWindow'
 
-            MDRectangleFlatButton:
-                text: "Remove Items"
-                on_release:
-                    root.manager.get_screen('EditFormItemWindow').ids.add_toggle_btn.disabled = True
-                    root.manager.get_screen('EditFormItemWindow').ids.edit_toggle_btn.disabled = True
-                    root.manager.get_screen('EditFormItemWindow').ids.item_place_label.text = 'Select Item'
-                    root.manager.get_screen('EditFormItemWindow').ids.item_name_input.disabled = True
-                    root.manager.get_screen('EditFormItemWindow').ids.add_or_edit_btn.text = "Remove Item"
-                    root.manager.current = 'EditFormItemWindow'
+        MDRectangleFlatButton:
+            text: "Remove Items"
+            on_release:
+                root.manager.get_screen('EditFormItemWindow').ids.add_toggle_btn.disabled = True
+                root.manager.get_screen('EditFormItemWindow').ids.edit_toggle_btn.disabled = True
+                root.manager.get_screen('EditFormItemWindow').ids.item_place_label.text = 'Select Item'
+                root.manager.get_screen('EditFormItemWindow').ids.item_name_input.disabled = True
+                root.manager.get_screen('EditFormItemWindow').ids.add_or_edit_btn.text = "Remove Item"
+                root.manager.current = 'EditFormItemWindow'
 
 <EditFormItemWindow>:
     name: "EditFormItemWindow"
@@ -855,7 +880,7 @@ WindowManager:
             id: add_toggle_btn
             text: "ADD ITEMS"
 	        background_normal: ''
-	        background_color: utils.get_color_from_hex("##6ab83a")
+	        background_color: utils.get_color_from_hex("#6ab83a")
 	        disabled: True if edit_toggle_btn.state == 'down' else False
 	        on_release:
 	            root.change_texts()
@@ -865,7 +890,7 @@ WindowManager:
             id: edit_toggle_btn
             text: "EDIT ITEMS"
 	        background_normal: ''
-	        background_color: utils.get_color_from_hex("##6ab83a")
+	        background_color: utils.get_color_from_hex("#6ab83a")
 	        disabled: True if add_toggle_btn.state == 'down' else False
             on_release:
                 root.change_texts()

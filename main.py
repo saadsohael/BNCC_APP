@@ -10,7 +10,7 @@ from kivymd.app import MDApp
 from kivy.uix.screenmanager import ScreenManager, Screen
 from kivy.lang import Builder
 from kivymd.toast import toast
-from kivymd.uix.button import MDFlatButton, MDRaisedButton, MDFloatingActionButton
+from kivymd.uix.button import MDFlatButton, MDRaisedButton, MDFloatingActionButton, MDIconButton
 from kivymd.uix.dialog import MDDialog
 from kivymd.uix.label import MDLabel
 from kivymd.uix.list import TwoLineListItem, MDList
@@ -97,6 +97,9 @@ class LoginScreen(Screen):
         elif self.manager.current in under_login_screen:
             self.dialog.dismiss()
 
+            if self.ids.login_label.text == "Admin Login":
+                self.manager.get_screen("ShowNoticeScreen").remove_del_btn()
+
             if self.manager.current == "ApplyCadetScreen":  # clear form widgets otherwise it will keep multiplying!!!
                 self.manager.get_screen("ApplyCadetScreen").ids.application_form.clear_widgets()
 
@@ -128,8 +131,8 @@ class LoginScreen(Screen):
                     dataHandler.remember_user("admin_offline_data", self.ids.username_textfield.text,
                                               self.ids.password_textfield.text, "admin_id")
                     dataHandler.update_app_data('static_app_data', 'remember_admin', True)
+                self.manager.get_screen("ShowNoticeScreen").add_del_btn()
                 self.manager.current = "AdminDash"
-                self.manager.get_screen("ShowNoticeScreen").ids.delete_notice_btn.disabled = False
                 self.ids.username_textfield.text = ''
                 self.ids.password_textfield.text = ''
                 self.ids.remember_check.state = 'normal'
@@ -145,7 +148,6 @@ class LoginScreen(Screen):
                     self.manager.get_screen("CadetDash").cadet_pass = self.ids.password_textfield.text
                     self.manager.get_screen("CadetDash").show_cadet()
                     self.manager.current = "CadetDash"
-                    self.manager.get_screen("ShowNoticeScreen").ids.delete_notice_btn.disabled = True
                     self.ids.username_textfield.text = ''
                     self.ids.password_textfield.text = ''
                     self.ids.remember_check.state = 'normal'
@@ -154,7 +156,7 @@ class LoginScreen(Screen):
             else:
                 toast("Wrong Id or Password!")
 
-        self.manager.get_screen("AdminDash").ids.nav_drawer.set_state("close")
+        self.manager.get_screen("AdminDash").ids.nav_drawer.set_state("closed")
 
     def auto_complete(self):
         if self.ids.login_label.text == "Admin Login":
@@ -187,6 +189,8 @@ class LoginScreen(Screen):
     def go_back(self):
         # fetch previous_screens
         if self.manager.current in under_login_screen:
+            if self.ids.login_label.text == "Admin Login":
+                self.manager.get_screen("ShowNoticeScreen").remove_del_btn()
             self.manager.current = "LoginScreen"
         elif self.manager.current in under_admin_dash:
             if self.manager.current == "AdminProfile":
@@ -584,7 +588,9 @@ class ApplicationFormWindow(Screen):
     def show_form(self):
         form_items = eval(dataHandler.query_app_data("application_form", "dynamic_app_data")[0][0])
         for v in form_items:
-            label = MDLabel(text=v, size_hint_x=0.55, halign="center", valign='middle')
+            label = MDLabel(text=v,
+                            pos_hint={'center_x': 0.5, 'center_y': 0.5},
+                            adaptive_height=True)
             self.ids.edit_application_form.add_widget(label)
 
 
@@ -826,7 +832,20 @@ class EditFormItemWindow(Screen):
 
 class AdminProfile(Screen):
 
+    def set_navigation(self):
+        if self.manager.get_screen("LoginScreen").ids.login_label.text == "Admin Login":
+            self.ids.nav_label.text = "Admin Dash"
+            self.ids.nav_user_info.text = "Cadets Info"
+            self.ids.nav_dash.text = "Dash"
+            self.ids.nav_dash.disabled = False
+        else:
+            self.ids.nav_label.text = "Cadet Dash"
+            self.ids.nav_user_info.text = "Admin Info"
+            self.ids.nav_dash.text = ""
+            self.ids.nav_dash.disabled = True
+
     def show_admin(self):
+
         self.adm_info = admin.admin_info()
         admin_data = admin.fetch_admin_data()  # get admin data from database
 
@@ -1024,6 +1043,7 @@ class CadetDash(Screen):
         self.cadet_pass = ''
 
     def show_cadet(self):
+
         self.cadet_cols = [' '.join(v.split("_")) for v in dataHandler.query_cadet_col_name() if
                            v != "Cadet_Password"]
         cadet_data = [v for v in
@@ -1104,6 +1124,7 @@ class ShowNoticeScreen(Screen):
 
         self.title = ''
         self.text = ''
+        self.delete_btn = MDIconButton(icon="delete", pos_hint={'center_x': 0.9, 'center_y': 0.92})
         self.dialog = MDDialog(title="Are You Sure You Want To Delete This Notice?",
                                size_hint=(None, None),
                                _spacer_top=sp(15),
@@ -1111,6 +1132,12 @@ class ShowNoticeScreen(Screen):
                                buttons=[MDFlatButton(text='Yes', on_release=self.delete_notice),
                                         MDFlatButton(text='No', on_release=self.close_dialog)]
                                )
+
+    def add_del_btn(self):
+        self.add_widget(self.delete_btn)
+
+    def remove_del_btn(self):
+        self.remove_widget(self.delete_btn)
 
     def view_notice(self):
         self.ids.notice_title.text = self.title
