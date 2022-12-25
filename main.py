@@ -1191,40 +1191,32 @@ class AboutScreen(Screen):
 
 
 class SettingsScreen(Screen):
-    def __init__(self, **kwargs):
-        super(SettingsScreen, self).__init__(**kwargs)
-
-    # change app theme when button is pressed!
-
-    def change_theme(self):
-
-        app = MainApp()
-        theme_color = dataHandler.query_app_data("theme_color", "static_app_data")[0][0]
-
-        if theme_color == "Light":
-            dataHandler.update_app_data("static_app_data", 'theme_color', 'Dark')
-            app.update_theme()
-
-        else:
-            dataHandler.update_app_data("static_app_data", 'theme_color', 'Light')
-            app.update_theme()
+    pass
 
 
 class MainApp(MDApp):
     def build(self):
         self.title = "App By SIS"
-        self.theme_cls.primary_palette = "Green"
+        # self.has_internet = dataHandler.has_internet()
 
         theme_color = dataHandler.query_app_data("theme_color", "static_app_data")[0][0]
+        primary_palette = dataHandler.query_app_data("primary_palette", "static_app_data")[0][0]
         self.theme_cls.theme_style = theme_color
+        self.theme_cls.primary_palette = primary_palette
 
         kvFile = Builder.load_file("app_design.kv")
 
         return kvFile
 
-    def update_theme(self):
-        theme_color = dataHandler.query_app_data("theme_color", "static_app_data")[0][0]
-        self.theme_cls.theme_style = theme_color
+    def change_theme_style(self):
+        self.theme_cls.theme_style = (
+            "Dark" if self.theme_cls.theme_style == "Light" else "Light"
+        )
+        dataHandler.update_app_data("static_app_data", 'theme_color', self.theme_cls.theme_style)
+
+    def change_primary_palette(self, palette_color):
+        self.theme_cls.primary_palette = palette_color
+        dataHandler.update_app_data("static_app_data", 'primary_palette', palette_color)
 
 
 MainApp().run()

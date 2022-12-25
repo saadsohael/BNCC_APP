@@ -63,7 +63,6 @@ WindowManager:
                 helper_text_mode: "on_focus"
                 icon_right: "account"
                 icon_right_color: "white" if app.theme_cls.theme_style == "Dark" else "black"
-                text_color: "white" if app.theme_cls.theme_style == "Dark" else "black"
                 on_focus: root.auto_complete()
 
             MDTextField:
@@ -73,7 +72,6 @@ WindowManager:
                 helper_text_mode: "on_focus"
                 icon_right: "key-variant"
                 icon_right_color: "white" if app.theme_cls.theme_style == "Dark" else "black"
-                text_color: "white" if app.theme_cls.theme_style == "Dark" else "black"
                 password: True
 
 
@@ -133,7 +131,6 @@ WindowManager:
     MDRectangleFlatButton:
         id: apply_btn
         text: "Apply to be Cadet"
-        text_color: utils.get_color_from_hex("#4298f5")
         line_width: .1
         pos_hint: {"center_x":0.48,"center_y":0.12}
         font_style: "Subtitle1"
@@ -152,14 +149,12 @@ WindowManager:
         rows: 4
         spacing: 40
         padding: 20
-        adaptive_height: True
-        adaptive_width: True
+        adaptive_size: True
         pos_hint: {"center_x":0.5,"center_y":0.5}
         valign: "middle"
 
         MDRaisedButton:
             text: "View Applicants"
-            md_bg_color: utils.get_color_from_hex("#3067ddff")
             on_release:
                 root.manager.get_screen("ViewApplicantScreen").clear_widgets()
                 root.manager.get_screen("ViewApplicantScreen").applicants_dic = {}
@@ -169,7 +164,6 @@ WindowManager:
 
         MDRaisedButton:
             text: "Application Form"
-            md_bg_color: utils.get_color_from_hex("#3067ddff")
             on_release:
                 root.manager.get_screen("ApplicationFormWindow").show_form()
                 root.manager.current = "ApplicationFormWindow"
@@ -177,7 +171,6 @@ WindowManager:
 
         MDRaisedButton:
             text: "Cadets to be Reviewed"
-            md_bg_color: utils.get_color_from_hex("#3067ddff")
             on_release:
                 root.manager.get_screen("ViewApplicantScreen").clear_widgets()
                 root.manager.get_screen("ViewApplicantScreen").applicants_dic = {}
@@ -187,7 +180,6 @@ WindowManager:
 
         MDRaisedButton:
             text: "Create Notice"
-            md_bg_color: utils.get_color_from_hex("#3067ddff")
             on_release:
                 root.manager.get_screen("NoticeScreen").notice_dic = {}
                 root.manager.get_screen("NoticeScreen").show_notices()
@@ -714,21 +706,18 @@ WindowManager:
             MDRectangleFlatButton:
                 text: "Gmail"
                 line_color: utils.get_color_from_hex("#EA4335")
-                text_color: utils.get_color_from_hex("#EA4335")
                 on_release:
                     root.open_web("gmail")
 
             MDRectangleFlatButton:
                 text: "Facebook"
                 line_color: utils.get_color_from_hex("#4267B2")
-                text_color: utils.get_color_from_hex("#4267B2")
                 on_release:
                     root.open_web("facebook")
 
             MDRectangleFlatButton:
                 text: "Instagram"
                 line_color: utils.get_color_from_hex("#fbad50")
-                text_color: utils.get_color_from_hex("#fbad50")
                 on_release:
                     root.open_web("instagram")
 
@@ -737,26 +726,89 @@ WindowManager:
     name: "SettingsScreen"
 
     MDCard:
+        id: settings_mdcard
         orientation: "vertical"
+        size_hint: None, None
+        size: root.width - dp(50), root.height - dp(200)
+        pos_hint: {"center_x":0.5, "center_y":0.4}
+        adaptive_size: True
 
-        ScrollView:
-            MDList:
+        FloatLayout:
+            adaptive_size: True
+            pos_hint: {"center_x":0.5}
+            spacing: "10dp"
+            MDLabel:
+                id: theme_style_label
+                text: "Theme Style - "
+                adaptive_size: True
+                pos_hint: {"center_x":0.3,"center_y":0.7}
+            MDRaisedButton:
+                id: theme_style_change_btn
+                text: "Dark" if app.theme_cls.theme_style == "Dark" else "Light"
+                pos_hint: {"center_x":0.8,"center_y":0.7}
+                md_bg_color: utils.get_color_from_hex("#161716") if app.theme_cls.theme_style == "Dark" else utils.get_color_from_hex("#ebe4e4")
+                text_color: [1,1,1,1] if app.theme_cls.theme_style == "Dark" else utils.get_color_from_hex("#000000")
+                on_release: app.change_theme_style()
+            MDLabel:
+                id: primary_palette_label
+                text: "App Color - {}".format(app.theme_cls.primary_palette)
+                adaptive_size: True
+                pos: theme_style_label.pos[0], theme_style_label.pos[1] - dp(50)
+            MDGridLayout:
+                id: primary_palette_change_btn
+                pos_hint: {"center_x":0.38, "center_y":0.42}
+                cols: 3
+                rows: 1
+                adaptive_size: True
+                MDRaisedButton:
+                    text: "Orange"
+                    md_bg_color: utils.get_color_from_hex("#FF9100") if app.theme_cls.primary_palette != "Orange" else utils.get_color_from_hex("#FF9100")
+                    on_release:
+                        app.change_primary_palette("Orange")
+                        theme_style_change_btn.md_bg_color = utils.get_color_from_hex("#161716") if app.theme_cls.theme_style == "Dark" else utils.get_color_from_hex("#ebe4e4")
+                        theme_style_change_btn.text_color = [1,1,1,1] if app.theme_cls.theme_style == "Dark" else utils.get_color_from_hex("#000000")
+                MDRaisedButton:
+                    text: "Red"
+                    md_bg_color: utils.get_color_from_hex("#FF2725") if app.theme_cls.primary_palette != "Red" else utils.get_color_from_hex("#FF2725")
+                    on_release:
+                        app.change_primary_palette("Red")
+                        theme_style_change_btn.md_bg_color = utils.get_color_from_hex("#161716") if app.theme_cls.theme_style == "Dark" else utils.get_color_from_hex("#ebe4e4")
+                        theme_style_change_btn.text_color = [1,1,1,1] if app.theme_cls.theme_style == "Dark" else utils.get_color_from_hex("#000000")
+                MDRaisedButton:
+                    text: "Green"
+                    md_bg_color: utils.get_color_from_hex("#00B241") if app.theme_cls.primary_palette != "Green" else utils.get_color_from_hex("#00B241")
+                    on_release:
+                        app.change_primary_palette("Green")
+                        theme_style_change_btn.md_bg_color = utils.get_color_from_hex("#161716") if app.theme_cls.theme_style == "Dark" else utils.get_color_from_hex("#ebe4e4")
+                        theme_style_change_btn.text_color = [1,1,1,1] if app.theme_cls.theme_style == "Dark" else utils.get_color_from_hex("#000000")
 
-                OneLineListItem:
-                    id: theme_changer
-                    text: f"Current theme : {app.theme_cls.theme_style}"
-                    color: "white" if app.theme_cls.theme_style == "Dark" else "black"
-                    on_press:
-                        root.change_theme()
-                        app.update_theme()
-                        theme_changer.text = f"Current theme : {app.theme_cls.theme_style}"
+    FloatLayout:
+        canvas:
+            Color:
+                rgba: 1,1,1,1
+            Ellipse:
+                size: 200, 200
+                pos: settings_mdcard.pos[0] + settings_mdcard.width//2 - 100, settings_mdcard.pos[1] + settings_mdcard.height - 100
+                source: 'Bncc_logo.png'
+                angle_start: 0
+                angle_end: 360
 
-
+    MDNavigationLayout:
+        ScreenManager:
+            Screen:
+                BoxLayout:
+                    orientation: "vertical"
                     MDToolbar:
-                        text: "Theme Style"
-                        right_action_items: [["theme-light-dark"]]
-                        theme_text_color: "Custom"
-                        md_bg_color: [1,0,0,0]
+                        title: "RC BNCC"
+                        elevation: sp(8)
+
+                        Image:
+                            source: "Bncc_logo.png"
+                            pos: (((self.parent.size[0])/1.5)-20,self.pos[1])
+                    Widget:
+
+
+
 
 
 <ApplicationFormWindow>:
@@ -784,8 +836,7 @@ WindowManager:
         cols: 2
         rows: 1
         pos_hint: {"center_x":0.5,"center_y":0.1}
-        adaptive_height: True
-        adaptive_width: True
+        adaptive_size: True
         spacing: 30
 
         MDRectangleFlatButton:

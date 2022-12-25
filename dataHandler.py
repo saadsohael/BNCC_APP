@@ -119,7 +119,7 @@ def create_app_data():
 
     cursor = db.cursor()
     cursor.execute(
-        """CREATE TABLE IF NOT EXISTS static_app_data(theme_color text, remember_admin bool, remember_cadet bool)""")
+        """CREATE TABLE IF NOT EXISTS static_app_data(theme_color text,primary_palette text, remember_admin bool, remember_cadet bool)""")
     db.commit()
 
     cursor.execute("SELECT theme_color FROM static_app_data")
@@ -129,7 +129,7 @@ def create_app_data():
     for v in data:
         theme = data
     if theme == '':
-        cursor.execute("INSERT INTO static_app_data VALUES('Light', False, False)")
+        cursor.execute("INSERT INTO static_app_data VALUES('Light','Green', False, False)")
         db.commit()
 
     cursor.execute("""CREATE TABLE IF NOT EXISTS cadet_offline_data 
