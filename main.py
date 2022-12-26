@@ -23,8 +23,12 @@ from kivy.animation import Animation
 from kivy.properties import NumericProperty
 from kivy.uix.image import CoreImage
 from kivy.core.window import Window
+from kivy import platform
 
-Window.size = (300, 500)
+if platform == "android":
+    from android.permissions import request_permissions, Permission
+
+    request_permissions([Permission.READ_EXTERNAL_STORAGE, Permission.WRITE_EXTERNAL_STORAGE])
 
 under_login_screen = ["AdminDash", "CadetDash", "ApplyCadetScreen", "PasswordRecoveryWindow"]
 under_admin_dash = ["ApplicationFormWindow"]
@@ -1274,6 +1278,8 @@ class SettingsScreen(Screen):
 
 class MainApp(MDApp):
     def build(self):
+        # global screen_manager
+        # screen_manager = ScreenManager()
         self.title = "App By SIS"
         theme_color = dataHandler.query_app_data("theme_color", "static_app_data")[0][0]
         primary_palette = dataHandler.query_app_data("primary_palette", "static_app_data")[0][0]
