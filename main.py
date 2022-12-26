@@ -48,8 +48,8 @@ class LoginScreen(Screen):
 
         self.auto_complete_admin = MDDialog(title="Do You Want To Autofill ID and Password?",
                                             size_hint=(None, None),
-                                            _spacer_top=sp(15),
-                                            width=(self.width - sp(80)),
+                                            _spacer_top=15,
+                                            width=(self.width - 80),
                                             buttons=[MDFlatButton(text='Yes',
                                                                   on_release=self.admin_autofill),
                                                      MDFlatButton(text='No',
@@ -58,8 +58,8 @@ class LoginScreen(Screen):
 
         self.auto_complete_cadet = MDDialog(title="Do You Want To Autofill ID and Password?",
                                             size_hint=(None, None),
-                                            _spacer_top=sp(15),
-                                            width=(self.width - sp(80)),
+                                            _spacer_top=15,
+                                            width=(self.width - 80),
                                             buttons=[MDFlatButton(text='Yes', on_release=self.cadet_autofill),
                                                      MDFlatButton(text='No',
                                                                   on_release=self.close_autofill)]
@@ -115,8 +115,8 @@ class LoginScreen(Screen):
 
         self.dialog = MDDialog(title=title,
                                size_hint=(None, None),
-                               _spacer_top=sp(15),
-                               width=(self.width - sp(80)),
+                               _spacer_top=15,
+                               width=(self.width - 80),
                                buttons=[MDFlatButton(text='Yes', on_release=self.confirm_yes),
                                         MDFlatButton(text='No', on_release=self.close_dialog)]
                                )
@@ -317,8 +317,8 @@ class PasswordRecoveryWindow(Screen):
 
         self.dialog = MDDialog(title=title,
                                size_hint=(None, None),
-                               _spacer_top=sp(15),
-                               width=(self.width - sp(50)),
+                               _spacer_top=15,
+                               width=(self.width - 50),
                                buttons=[MDFlatButton(text='Dismiss', on_release=self.close_dialog)])
         self.dialog.open()
 
@@ -700,7 +700,7 @@ class EditFormItemWindow(Screen):
                 {
                     "viewclass": "OneLineListItem",
                     "text": v,
-                    "height": sp(40),
+                    "height": 40,
                     "on_release": lambda x=v: self.selected_item(x)
                 } for v in item_dropdown_list
             ]  # this is just a linked list! like : [v for v in list]
@@ -826,8 +826,8 @@ class EditFormItemWindow(Screen):
         self.dialog = MDDialog(title="Are You Sure You Want To Remove"
                                      f"\n{self.ids.drop_item.text} from Application Form?",
                                size_hint=(None, None),
-                               _spacer_top=sp(15),
-                               width=(self.width - sp(50)),
+                               _spacer_top=15,
+                               width=(self.width - 50),
                                buttons=[MDFlatButton(text='Yes', on_release=self.remove_item),
                                         MDFlatButton(text='No', on_release=self.close_dialog)]
                                )
@@ -989,8 +989,8 @@ class ShowApplicantInfoScreen(Screen):
         self.cadet_email_address = ''
         self.dialog = MDDialog(title="Are You Sure You Want To Remove This Applicant?",
                                size_hint=(None, None),
-                               _spacer_top=sp(15),
-                               width=(self.width - sp(50)),
+                               _spacer_top=15,
+                               width=(self.width - 50),
                                buttons=[MDFlatButton(text='Yes', on_release=self.remove_item),
                                         MDFlatButton(text='No', on_release=self.close_dialog)]
                                )
@@ -1198,8 +1198,8 @@ class ShowNoticeScreen(Screen):
         self.delete_btn.bind(on_release=self.open_del_dialog)
         self.dialog = MDDialog(title="Are You Sure You Want To Delete This Notice?",
                                size_hint=(None, None),
-                               _spacer_top=sp(15),
-                               width=(self.width - sp(50)),
+                               _spacer_top=15,
+                               width=(self.width - 50),
                                buttons=[MDFlatButton(text='Yes', on_release=self.delete_notice),
                                         MDFlatButton(text='No', on_release=self.close_dialog)]
                                )
@@ -1246,10 +1246,15 @@ class CreateNoticeScreen(Screen):
         try:
             notice_title = notice_title.capitalize()
             if not notice_title.isspace() and not notice_text.isspace() and notice_title != '' and notice_text != '':
-                dataHandler.add_notice(notice_title, notice_text)
-                self.ids.notice_title.text = ''
-                self.ids.notice_textfield.text = ''
-                toast('Notice Successfully Added!')
+                if len(notice_title) < self.ids.notice_title.max_text_length and len(notice_text) < self.ids.notice_textfield.max_text_length:
+                    dataHandler.add_notice(notice_title, notice_text)
+                    self.ids.notice_title.text = ''
+                    self.ids.notice_textfield.text = ''
+                    toast('Notice Successfully Added!')
+                else:
+                    toast('Title should not exceed than 250 letters') if len(
+                        notice_title) >= self.ids.notice_title.max_text_length else toast(
+                        'Notice should not exceed than 990 letters')
             else:
                 if notice_title.isspace():
                     toast('Title cannot be empty!')
@@ -1261,6 +1266,7 @@ class CreateNoticeScreen(Screen):
 
 
 class AboutScreen(Screen):
+
     def open_web(self, webname):
         if webname == 'gmail':
             toast("Email : saad.raj.bd@gmail.com")
@@ -1278,8 +1284,6 @@ class SettingsScreen(Screen):
 
 class MainApp(MDApp):
     def build(self):
-        # global screen_manager
-        # screen_manager = ScreenManager()
         self.title = "App By SIS"
         theme_color = dataHandler.query_app_data("theme_color", "static_app_data")[0][0]
         primary_palette = dataHandler.query_app_data("primary_palette", "static_app_data")[0][0]

@@ -40,7 +40,8 @@ WindowManager:
         id: login_label
         text: "Cadet Login"
         pos_hint: {"center_x":0.5,"center_y":0.76}
-        font_style: "H5"
+        font_name: "Poppins-SemiBold.ttf"
+        font_size: dp(32)
         halign: 'center'
         valign: 'middle'
 
@@ -247,9 +248,6 @@ WindowManager:
                     OneLineListItem:
                         text: "Notice Board"
                         on_release:
-                            #if root.manager.get_screen("AdminProfile").ids.nav_dash.text == "Admin Dash": \
-                            #root.manager.get_screen("NoticeScreen").add_widget(root.manager.get_screen("NoticeScreen").action_button);
-
                             root.manager.get_screen("NoticeScreen").notice_dic = {}
                             root.manager.get_screen("NoticeScreen").show_notices()
                             root.manager.current = "NoticeScreen"
@@ -657,14 +655,16 @@ WindowManager:
     GridLayout:
         cols: 1
         rows: 2
-        padding: 50, 0
+        padding: 50, 0, 50, 10
 
         Label:
             id: notice_title
             text: ''
+            text_size: self.width, None
             size_hint_y: 0.2
-            color: utils.get_color_from_hex("#fc7b03")
-            font_size: self.width/10
+            color: utils.get_color_from_hex("#fc7b03")  #asfdf
+            font_name: "Courier.ttc"
+            font_size: root.width/15
 
         ScrollView:
             Label:
@@ -673,7 +673,7 @@ WindowManager:
                 height: self.texture_size[1]
                 text_size: self.width, None
                 text: ''
-                font_size: self.width/15
+                font_size: self.width/20
 
 <AboutScreen>:
     name: "AboutScreen"
@@ -681,44 +681,64 @@ WindowManager:
     MDBoxLayout:
         orientation: 'vertical'
         padding: 50
+        size_hint: 1, 0.5
+        pos_hint: {"center_y":0.5}
 
         MDLabel:
             text: "Developer"
             halign: 'center'
             valign: 'middle'
+            font_name: "MarkerFelt.ttc"
+            font_size: self.width * 0.1
+            theme_text_color: "Custom"
+            text_color: [255, 39, 37, 1] if app.theme_cls.theme_style == "Dark" else [0, 178, 65, 1]
 
         MDLabel:
             text: "Saad Ibne Sohael"
             halign: 'center'
             valign: 'middle'
+            font_name: "MarkerFelt.ttc"
+            font_size: self.width * 0.1
+            theme_text_color: "Custom"
+            text_color: [255, 39, 37, 1] if app.theme_cls.theme_style == "Dark" else [0, 178, 65, 1]
 
         MDLabel:
             text: "Contact"
             halign: 'center'
             valign: 'middle'
+            font_name: "MarkerFelt.ttc"
+            font_size: self.width * 0.1
+            theme_text_color: "Custom"
+            text_color: [255, 39, 37, 1] if app.theme_cls.theme_style == "Dark" else [0, 178, 65, 1]
 
         MDGridLayout:
             cols: 3
             rows: 1
-            spacing : 30
+            spacing: 30
             pos_hint: {'center_x':0.5}
             adaptive_size: True
 
             MDRectangleFlatButton:
                 text: "Gmail"
-                line_color: utils.get_color_from_hex("#EA4335")
+                theme_text_color: "Custom"
+                text_color: utils.get_color_from_hex("#EA4335") if app.theme_cls.theme_style == "Dark" else utils.get_color_from_hex("#91160c")
+                line_color: utils.get_color_from_hex("#EA4335") if app.theme_cls.theme_style == "Dark" else utils.get_color_from_hex("#91160c")
                 on_release:
                     root.open_web("gmail")
 
             MDRectangleFlatButton:
                 text: "Facebook"
-                line_color: utils.get_color_from_hex("#4267B2")
+                theme_text_color: "Custom"
+                text_color: utils.get_color_from_hex("#4267B2") if app.theme_cls.theme_style == "Dark" else utils.get_color_from_hex("#0e244f")
+                line_color: utils.get_color_from_hex("#4267B2") if app.theme_cls.theme_style == "Dark" else utils.get_color_from_hex("#0e244f")
                 on_release:
                     root.open_web("facebook")
 
             MDRectangleFlatButton:
                 text: "Instagram"
-                line_color: utils.get_color_from_hex("#fbad50")
+                theme_text_color: "Custom"
+                text_color: utils.get_color_from_hex("#fbad50") if app.theme_cls.theme_style == "Dark" else utils.get_color_from_hex("#a15d0b")
+                line_color: utils.get_color_from_hex("#fbad50") if app.theme_cls.theme_style == "Dark" else utils.get_color_from_hex("#a15d0b")
                 on_release:
                     root.open_web("instagram")
 
