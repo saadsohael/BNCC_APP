@@ -2,6 +2,7 @@ import io
 import time
 import webbrowser
 from random import randint
+import mysql.connector
 import admin
 import dataHandler
 import mail_handler
@@ -24,9 +25,6 @@ from kivy.uix.image import CoreImage
 from kivy.core.window import Window
 
 Window.size = (300, 500)
-
-dataHandler.create_app_data()  # create static (on device memory) and dynamic (online ) app data
-dataHandler.set_database()
 
 under_login_screen = ["AdminDash", "CadetDash", "ApplyCadetScreen", "PasswordRecoveryWindow"]
 under_admin_dash = ["ApplicationFormWindow"]
@@ -124,39 +122,44 @@ class LoginScreen(Screen):
         self.dialog.dismiss()
 
     def log_in_btn(self):
-        if self.ids.login_label.text == "Admin Login":
-            if dataHandler.is_admin(self.ids.username_textfield.text, self.ids.password_textfield.text):
-                if self.ids.remember_check.state == 'down':
-                    dataHandler.create_offline_datatable('admin_offline_data', 'admin_id', 'admin_password')
-                    dataHandler.remember_user("admin_offline_data", self.ids.username_textfield.text,
-                                              self.ids.password_textfield.text, "admin_id")
-                    dataHandler.update_app_data('static_app_data', 'remember_admin', True)
-                self.manager.get_screen("ShowNoticeScreen").add_del_btn()
-                self.manager.current = "AdminDash"
-                self.ids.username_textfield.text = ''
-                self.ids.password_textfield.text = ''
-                self.ids.remember_check.state = 'normal'
-            else:
-                toast("Wrong Username or Password!")
-        else:
-            if dataHandler.is_cadet(self.ids.username_textfield.text, self.ids.password_textfield.text) != 'Not Cadet':
-                if dataHandler.is_cadet(self.ids.username_textfield.text, self.ids.password_textfield.text):
+        try:
+            if self.ids.login_label.text == "Admin Login":
+                if dataHandler.is_admin(self.ids.username_textfield.text, self.ids.password_textfield.text):
                     if self.ids.remember_check.state == 'down':
-                        dataHandler.remember_user("cadet_offline_data", self.ids.username_textfield.text,
-                                                  self.ids.password_textfield.text, "cadet_id")
-                        dataHandler.update_app_data('static_app_data', 'remember_cadet', True)
-                    self.manager.get_screen("CadetDash").cadet_pass = self.ids.password_textfield.text
-                    self.manager.get_screen("CadetDash").show_cadet()
-                    self.manager.current = "CadetDash"
+                        dataHandler.create_offline_datatable('admin_offline_data', 'admin_id', 'admin_password')
+                        dataHandler.remember_user("admin_offline_data", self.ids.username_textfield.text,
+                                                  self.ids.password_textfield.text, "admin_id")
+                        dataHandler.update_app_data('static_app_data', 'remember_admin', True)
+                    self.manager.get_screen("ShowNoticeScreen").add_del_btn()
+                    self.manager.current = "AdminDash"
                     self.ids.username_textfield.text = ''
                     self.ids.password_textfield.text = ''
                     self.ids.remember_check.state = 'normal'
                 else:
-                    toast("Wrong Id or Password!")
+                    toast("Wrong Username or Password!")
             else:
-                toast("Wrong Id or Password!")
+                if dataHandler.is_cadet(self.ids.username_textfield.text,
+                                        self.ids.password_textfield.text) != 'Not Cadet':
+                    if dataHandler.is_cadet(self.ids.username_textfield.text, self.ids.password_textfield.text):
+                        if self.ids.remember_check.state == 'down':
+                            dataHandler.remember_user("cadet_offline_data", self.ids.username_textfield.text,
+                                                      self.ids.password_textfield.text, "cadet_id")
+                            dataHandler.update_app_data('static_app_data', 'remember_cadet', True)
+                        self.manager.get_screen("CadetDash").cadet_pass = self.ids.password_textfield.text
+                        self.manager.get_screen("CadetDash").show_cadet()
+                        self.manager.current = "CadetDash"
+                        self.ids.username_textfield.text = ''
+                        self.ids.password_textfield.text = ''
+                        self.ids.remember_check.state = 'normal'
+                    else:
+                        toast("Wrong Id or Password!")
+                else:
+                    toast("Wrong Id or Password!")
 
-        self.manager.get_screen("AdminDash").ids.nav_drawer.set_state("closed")
+            self.manager.get_screen("AdminDash").ids.nav_drawer.set_state("closed")
+
+        except mysql.connector.errors.DatabaseError:
+            toast("Please check your internet connection")
 
     def auto_complete(self):
         if self.ids.login_label.text == "Admin Login":
@@ -169,18 +172,24 @@ class LoginScreen(Screen):
                     self.auto_complete_cadet.open()
 
     def admin_autofill(self, instance):
-        cadet_id = dataHandler.query_app_data("admin_id", "admin_offline_data")[0][0]
-        cadet_password = dataHandler.query_app_data("admin_password", "admin_offline_data")[0][0]
-        self.ids.username_textfield.text = cadet_id
-        self.ids.password_textfield.text = cadet_password
-        self.auto_complete_admin.dismiss()
+        try:
+            cadet_id = dataHandler.query_app_data("admin_id", "admin_offline_data")[0][0]
+            cadet_password = dataHandler.query_app_data("admin_password", "admin_offline_data")[0][0]
+            self.ids.username_textfield.text = cadet_id
+            self.ids.password_textfield.text = cadet_password
+            self.auto_complete_admin.dismiss()
+        except mysql.connector.errors.DatabaseError:
+            toast("Please check your internet connection")
 
     def cadet_autofill(self, instance):
-        cadet_id = dataHandler.query_app_data("cadet_id", "cadet_offline_data")[0][0]
-        cadet_password = dataHandler.query_app_data("cadet_password", "cadet_offline_data")[0][0]
-        self.ids.username_textfield.text = cadet_id
-        self.ids.password_textfield.text = cadet_password
-        self.auto_complete_cadet.dismiss()
+        try:
+            cadet_id = dataHandler.query_app_data("cadet_id", "cadet_offline_data")[0][0]
+            cadet_password = dataHandler.query_app_data("cadet_password", "cadet_offline_data")[0][0]
+            self.ids.username_textfield.text = cadet_id
+            self.ids.password_textfield.text = cadet_password
+            self.auto_complete_cadet.dismiss()
+        except mysql.connector.errors.DatabaseError:
+            toast("Please check your internet connection")
 
     def close_autofill(self, instance):
         self.auto_complete_admin.dismiss()
@@ -313,38 +322,40 @@ class PasswordRecoveryWindow(Screen):
         self.dialog.dismiss()
 
     def confirm_otp(self, instance):  # when confirm otp button is pressed!
+        if dataHandler.has_internet():
+            new_pass_label = MDLabel(text='Type new password : ')
+            self.new_pass_textfield = MDTextField(hint_text='enter new pass...')
+            confirm_pass_btn = MDRaisedButton(text="Confirm Password")
+            if self.manager.get_screen("LoginScreen").ids.login_label.text == "Admin Login":
+                if dataHandler.otp_matched("admin", self.otp_textfield.text):
+                    confirm_pass_btn.bind(on_release=self.confirm_admin_pass)
+                    dataHandler.drop_column('admin_data', 'otp')
+                    dataHandler.drop_column('admin_data', 'otp_salt')
+                    blank_space_ = MDLabel(text='')
+                    self.ids.reset_items.clear_widgets()
+                    self.ids.reset_items.add_widget(new_pass_label)
+                    self.ids.reset_items.add_widget(self.new_pass_textfield)
+                    self.ids.reset_items.add_widget(confirm_pass_btn)
+                    self.ids.reset_items.add_widget(blank_space_)
+                else:
+                    toast("Wrong OTP!")
 
-        new_pass_label = MDLabel(text='Type new password : ')
-        self.new_pass_textfield = MDTextField(hint_text='enter new pass...')
-        confirm_pass_btn = MDRaisedButton(text="Confirm Password")
-        if self.manager.get_screen("LoginScreen").ids.login_label.text == "Admin Login":
-            if dataHandler.otp_matched("admin", self.otp_textfield.text):
-                confirm_pass_btn.bind(on_release=self.confirm_admin_pass)
-                dataHandler.drop_column('admin_data', 'otp')
-                dataHandler.drop_column('admin_data', 'otp_salt')
-                blank_space_ = MDLabel(text='')
-                self.ids.reset_items.clear_widgets()
-                self.ids.reset_items.add_widget(new_pass_label)
-                self.ids.reset_items.add_widget(self.new_pass_textfield)
-                self.ids.reset_items.add_widget(confirm_pass_btn)
-                self.ids.reset_items.add_widget(blank_space_)
-            else:
-                toast("Wrong OTP!")
-
-        elif self.manager.get_screen("LoginScreen").ids.login_label.text == "Cadet Login":
-            if dataHandler.otp_matched("cadet", self.otp_textfield.text):
-                confirm_pass_btn.bind(on_release=self.confirm_cadet_pass)
-                dataHandler.drop_column('cadet_offline_data', 'otp')
-                dataHandler.drop_column('cadet_offline_data', 'otp_salt')
-                dataHandler.drop_column('cadet_offline_data', 'cadet_email')
-                blank_space_ = MDLabel(text='')
-                self.ids.reset_items.clear_widgets()
-                self.ids.reset_items.add_widget(new_pass_label)
-                self.ids.reset_items.add_widget(self.new_pass_textfield)
-                self.ids.reset_items.add_widget(confirm_pass_btn)
-                self.ids.reset_items.add_widget(blank_space_)
-            else:
-                toast("Wrong OTP!")
+            elif self.manager.get_screen("LoginScreen").ids.login_label.text == "Cadet Login":
+                if dataHandler.otp_matched("cadet", self.otp_textfield.text):
+                    confirm_pass_btn.bind(on_release=self.confirm_cadet_pass)
+                    dataHandler.drop_column('cadet_offline_data', 'otp')
+                    dataHandler.drop_column('cadet_offline_data', 'otp_salt')
+                    dataHandler.drop_column('cadet_offline_data', 'cadet_email')
+                    blank_space_ = MDLabel(text='')
+                    self.ids.reset_items.clear_widgets()
+                    self.ids.reset_items.add_widget(new_pass_label)
+                    self.ids.reset_items.add_widget(self.new_pass_textfield)
+                    self.ids.reset_items.add_widget(confirm_pass_btn)
+                    self.ids.reset_items.add_widget(blank_space_)
+                else:
+                    toast("Wrong OTP!")
+        else:
+            toast("Please Check Your Internet Connection!")
 
     def confirm_admin_pass(self, instance):  # when the change password button is pressed!
 
@@ -406,35 +417,37 @@ class ApplyCadetScreen(Screen):
     # create an application form window with the items in the dynamic (online) database
 
     def create_form(self):
-
-        form_items = eval(dataHandler.query_app_data("application_form", "dynamic_app_data")[0][0])
-        self.textfields = []
-        hintText = ''
-        for v in form_items:
-            if v == 'Date Of Birth':
-                hintText = 'DD/MM/YYYY'
-            if v == 'Height':
-                hintText = 'in inch'
-            if v == 'Weight':
-                hintText = 'in kg'
-            if v == 'Cadet Id':
-                hintText = 'auto generated'
-            if v == 'Cadet Password':
-                hintText = 'auto generated'
-
-            label = MDLabel(text=f'{v} : ', size_hint_x=0.55)
-            if v in ['Cadet Id', 'Cadet Password']:
-                textfield = MDTextField(mode="rectangle", size_hint_x=0.45, hint_text=hintText, disabled=True)
-            elif v == "Profile Photo":
-                textfield = MDRaisedButton(text="Choose Image", size_hint_x=0.45)
-                textfield.bind(on_release=self.open_file_explorer)
-            else:
-                textfield = MDTextField(mode="rectangle", size_hint_x=0.45, hint_text=hintText)
-            self.textfields.append(textfield)
-            self.ids.application_form.add_widget(label)
-            self.ids.application_form.add_widget(textfield)
-            self.form_inputs.append(textfield)
+        try:
+            form_items = eval(dataHandler.query_app_data("application_form", "dynamic_app_data")[0][0])
+            self.textfields = []
             hintText = ''
+            for v in form_items:
+                if v == 'Date Of Birth':
+                    hintText = 'DD/MM/YYYY'
+                if v == 'Height':
+                    hintText = 'in inch'
+                if v == 'Weight':
+                    hintText = 'in kg'
+                if v == 'Cadet Id':
+                    hintText = 'auto generated'
+                if v == 'Cadet Password':
+                    hintText = 'auto generated'
+
+                label = MDLabel(text=f'{v} : ', size_hint_x=0.55)
+                if v in ['Cadet Id', 'Cadet Password']:
+                    textfield = MDTextField(mode="rectangle", size_hint_x=0.45, hint_text=hintText, disabled=True)
+                elif v == "Profile Photo":
+                    textfield = MDRaisedButton(text="Choose Image", size_hint_x=0.45)
+                    textfield.bind(on_release=self.open_file_explorer)
+                else:
+                    textfield = MDTextField(mode="rectangle", size_hint_x=0.45, hint_text=hintText)
+                self.textfields.append(textfield)
+                self.ids.application_form.add_widget(label)
+                self.ids.application_form.add_widget(textfield)
+                self.form_inputs.append(textfield)
+                hintText = ''
+        except mysql.connector.errors.DatabaseError:
+            toast("Please check your internet connection")
 
     def open_file_explorer(self, instance):
         self.file_explorer.show('/')
@@ -454,6 +467,8 @@ class ApplyCadetScreen(Screen):
                 toast("Please Choose An Image less than or equal 60kb")
         except IsADirectoryError:
             toast('Please Select A Correct Image less than or equal 60kb')
+        except mysql.connector.errors.DatabaseError:
+            toast("Please check your internet connection")
 
     def exit_file_explorer(self, instance):
         self.file_explorer.close()
@@ -506,67 +521,72 @@ class ApplyCadetScreen(Screen):
         new_label = []
         cadet_info_list = []
         temp_list = []
-        if dataHandler.query_app_data('Cadet_Id', 'cadet_application_data'):
-            temp_list = [v[0] for v in dataHandler.query_app_data('Cadet_Id', 'cadet_application_data')]
-        unique_id = randint(100001, 199999)
-        if unique_id in temp_list:
-            while unique_id in temp_list:
-                unique_id = randint(100001, 199999)
-        temp_list.append(unique_id)
-        cadet_unique_id = str(temp_list[-1])
-        if self.form_filled():
-            form_items = eval(dataHandler.query_app_data("application_form", "dynamic_app_data")[0][0])
-            cadet_cols = [v for v in dataHandler.query_cadet_col_name()]
-            for i in form_items:
-                if i.count("'") > 0:
-                    temp_list = []
-                    for j in i.split(" "):
-                        if j.count("'") > 0:
-                            temp_list.append(j.split("'")[0])
-                        else:
-                            temp_list.append(j)
-                    form_items.insert(form_items.index(i), '_'.join(temp_list))
-                    form_items.remove(i)
-                else:
-                    if i.count(" "):
-                        form_items.insert(form_items.index(i), '_'.join(i.split(" ")))
+        try:
+            if dataHandler.query_app_data('Cadet_Id', 'cadet_application_data'):
+                temp_list = [v[0] for v in dataHandler.query_app_data('Cadet_Id', 'cadet_application_data')]
+            unique_id = randint(100001, 199999)
+            if unique_id in temp_list:
+                while unique_id in temp_list:
+                    unique_id = randint(100001, 199999)
+            temp_list.append(unique_id)
+            cadet_unique_id = str(temp_list[-1])
+            if self.form_filled():
+                form_items = eval(dataHandler.query_app_data("application_form", "dynamic_app_data")[0][0])
+                cadet_cols = [v for v in dataHandler.query_cadet_col_name()]
+                for i in form_items:
+                    if i.count("'") > 0:
+                        temp_list = []
+                        for j in i.split(" "):
+                            if j.count("'") > 0:
+                                temp_list.append(j.split("'")[0])
+                            else:
+                                temp_list.append(j)
+                        form_items.insert(form_items.index(i), '_'.join(temp_list))
                         form_items.remove(i)
-            for v in range(len(cadet_cols)):
-                new_label.insert(v, form_items[form_items.index(cadet_cols[v])])
-                if cadet_cols[v] != "Profile_Photo":
-                    if cadet_cols[v] not in ['Cadet_Id', 'Cadet_Password']:
-                        if cadet_cols[v] not in ['Email', 'Facebook_Id']:
-                            cadet_info_list.insert(v, ' '.join(
-                                [v.capitalize() for v in
-                                 self.textfields[form_items.index(cadet_cols[v])].text.split(" ")]))
-                        else:
-                            cadet_info_list.insert(v, self.textfields[form_items.index(cadet_cols[v])].text)
                     else:
-                        cadet_info_list.insert(v, cadet_unique_id) if cadet_cols[v] == 'Cadet_Id' \
-                            else cadet_info_list.insert(v, "N/A")
-                else:
-                    cadet_info_list.insert(v, dataHandler.img_binary_data(self.image_path))
+                        if i.count(" "):
+                            form_items.insert(form_items.index(i), '_'.join(i.split(" ")))
+                            form_items.remove(i)
+                for v in range(len(cadet_cols)):
+                    new_label.insert(v, form_items[form_items.index(cadet_cols[v])])
+                    if cadet_cols[v] != "Profile_Photo":
+                        if cadet_cols[v] not in ['Cadet_Id', 'Cadet_Password']:
+                            if cadet_cols[v] not in ['Email', 'Facebook_Id']:
+                                cadet_info_list.insert(v, ' '.join(
+                                    [v.capitalize() for v in
+                                     self.textfields[form_items.index(cadet_cols[v])].text.split(" ")]))
+                            else:
+                                cadet_info_list.insert(v, self.textfields[form_items.index(cadet_cols[v])].text)
+                        else:
+                            cadet_info_list.insert(v, cadet_unique_id) if cadet_cols[v] == 'Cadet_Id' \
+                                else cadet_info_list.insert(v, "N/A")
+                    else:
+                        cadet_info_list.insert(v, dataHandler.img_binary_data(self.image_path))
 
-            if dataHandler.has_internet():
-                if mail_handler.isValidEmail(self.textfields[cadet_cols.index('Email')].text):
-                    if dataHandler.query_app_data("*", "cadet_application_data"):
-                        existing_emails = [v[0] for v in dataHandler.query_app_data("Email", "cadet_application_data")]
-                        if self.textfields[cadet_cols.index('Email')].text not in existing_emails:
+                if dataHandler.has_internet():
+                    if mail_handler.isValidEmail(self.textfields[cadet_cols.index('Email')].text):
+                        if dataHandler.query_app_data("*", "cadet_application_data"):
+                            existing_emails = [v[0] for v in
+                                               dataHandler.query_app_data("Email", "cadet_application_data")]
+                            if self.textfields[cadet_cols.index('Email')].text not in existing_emails:
+                                dataHandler.add_cadet_info(cadet_info_list)
+                                toast("Application Form Submitted Successfully!\nYou will get an email once approved.",
+                                      duration=5)
+                            else:
+                                toast("Email already registered!")
+                        else:
                             dataHandler.add_cadet_info(cadet_info_list)
                             toast("Application Form Submitted Successfully!\nYou will get an email once approved.",
                                   duration=5)
-                        else:
-                            toast("Email already registered!")
                     else:
-                        dataHandler.add_cadet_info(cadet_info_list)
-                        toast("Application Form Submitted Successfully!\nYou will get an email once approved.",
-                              duration=5)
+                        toast("Email doesn't exist!")
                 else:
-                    toast("Email doesn't exist!")
+                    toast("Please Check Your Internet Connection!")
             else:
-                toast("Please Check Your Internet Connection!")
-        else:
-            toast("Please fill up the form correctly!")
+                toast("Please fill up the form correctly!")
+
+        except mysql.connector.errors.DatabaseError:
+            toast("Please check your internet connection")
 
 
 class AdminDash(Screen):
@@ -586,12 +606,15 @@ class ApplicationFormWindow(Screen):
             self.ids.edit_application_form.clear_widgets()
 
     def show_form(self):
-        form_items = eval(dataHandler.query_app_data("application_form", "dynamic_app_data")[0][0])
-        for v in form_items:
-            label = MDLabel(text=v,
-                            pos_hint={'center_x': 0.5, 'center_y': 0.5},
-                            adaptive_height=True)
-            self.ids.edit_application_form.add_widget(label)
+        try:
+            form_items = eval(dataHandler.query_app_data("application_form", "dynamic_app_data")[0][0])
+            for v in form_items:
+                label = MDLabel(text=v,
+                                pos_hint={'center_x': 0.5, 'center_y': 0.5},
+                                adaptive_height=True)
+                self.ids.edit_application_form.add_widget(label)
+        except mysql.connector.errors.DatabaseError:
+            toast("Please check your internet connection")
 
 
 class EditFormItemWindow(Screen):
@@ -600,8 +623,10 @@ class EditFormItemWindow(Screen):
         super(EditFormItemWindow, self).__init__(**kwargs)
         Window.bind(on_keyboard=self._key_handler)  # bind screen with keyboard or touch input
         self.item_dropdown_menu = MDDropdownMenu()
-
-        self.form_items_names = eval(dataHandler.query_app_data("application_form", "dynamic_app_data")[0][0])
+        try:
+            self.form_items_names = eval(dataHandler.query_app_data("application_form", "dynamic_app_data")[0][0])
+        except mysql.connector.errors.DatabaseError:
+            toast("Please check your internet connection")
 
     # handles keyboard/ touch input!
     def _key_handler(self, instance, key, *args):
@@ -613,7 +638,10 @@ class EditFormItemWindow(Screen):
             self.ids.edit_toggle_btn.state = 'normal'
             self.ids.item_name_input.disabled = False
             self.ids.item_place_label.text = 'Place at : '
-            self.ids.drop_item.text = self.form_items_names[0]
+            try:
+                self.ids.drop_item.text = self.form_items_names[0]
+            except AttributeError:
+                pass
             self.ids.add_or_edit_btn.text = "Add Item To Form"
             self.item_dropdown_menu.dismiss()
 
@@ -634,147 +662,155 @@ class EditFormItemWindow(Screen):
             self.ids.drop_item.text = self.form_items_names[0]
 
     def item_dropdown_(self):  # dropdown menu for form items to select!
+        try:
 
-        form_items = eval(dataHandler.query_app_data("application_form", "dynamic_app_data")[0][0])
+            form_items = eval(dataHandler.query_app_data("application_form", "dynamic_app_data")[0][0])
 
-        if self.ids.add_toggle_btn.state == 'down':
-            form_items.pop()
-            form_items.insert(0, 'At Top')
-            form_items.append('At Bottom')
-
-        item_dropdown_list = []
-
-        for v in form_items:  # looping through the items to add AFTER before every item name!
-
-            # if user is adding items
             if self.ids.add_toggle_btn.state == 'down':
+                form_items.pop()
+                form_items.insert(0, 'At Top')
+                form_items.append('At Bottom')
 
-                # if form item is not the first or last item in the list! (first: at top, last: at bottom)
-                if form_items.index(v) != 0 and form_items.index(v) != (len(form_items) - 1):
-                    item_dropdown_list.append(f'After {v}')
-                else:
-                    item_dropdown_list.append(v)
+            item_dropdown_list = []
 
-            # if user is editing or removing items or doing nothing
-            else:
-                if self.ids.add_or_edit_btn.text == "Remove Item":
-                    if v not in dataHandler.primary_form_items():
+            for v in form_items:  # looping through the items to add AFTER before every item name!
+
+                # if user is adding items
+                if self.ids.add_toggle_btn.state == 'down':
+
+                    # if form item is not the first or last item in the list! (first: at top, last: at bottom)
+                    if form_items.index(v) != 0 and form_items.index(v) != (len(form_items) - 1):
+                        item_dropdown_list.append(f'After {v}')
+                    else:
                         item_dropdown_list.append(v)
+
+                # if user is editing or removing items or doing nothing
                 else:
-                    item_dropdown_list.append(v)
+                    if self.ids.add_or_edit_btn.text == "Remove Item":
+                        if v not in dataHandler.primary_form_items():
+                            item_dropdown_list.append(v)
+                    else:
+                        item_dropdown_list.append(v)
 
-        item_dropdown_list = [
-            {
-                "viewclass": "OneLineListItem",
-                "text": v,
-                "height": sp(40),
-                "on_release": lambda x=v: self.selected_item(x)
-            } for v in item_dropdown_list
-        ]  # this is just a linked list! like : [v for v in list]
+            item_dropdown_list = [
+                {
+                    "viewclass": "OneLineListItem",
+                    "text": v,
+                    "height": sp(40),
+                    "on_release": lambda x=v: self.selected_item(x)
+                } for v in item_dropdown_list
+            ]  # this is just a linked list! like : [v for v in list]
 
-        self.item_dropdown_menu = MDDropdownMenu(
-            caller=self.ids.drop_item,
-            items=item_dropdown_list,
-            position="auto",
-            width_mult=6
-        )
-        self.item_dropdown_menu.open()
+            self.item_dropdown_menu = MDDropdownMenu(
+                caller=self.ids.drop_item,
+                items=item_dropdown_list,
+                position="auto",
+                width_mult=6
+            )
+            self.item_dropdown_menu.open()
+        except mysql.connector.errors.DatabaseError:
+            toast("Please check your internet connection")
 
     def selected_item(self, item_name):
         self.ids.drop_item.text = item_name
         self.item_dropdown_menu.dismiss()
 
     def add_item(self):  # add form item to database
+        try:
+            form_items = eval(dataHandler.query_app_data("application_form", "dynamic_app_data")[0][0])
+            input_text = self.ids.item_name_input.text.split(" ")
 
-        form_items = eval(dataHandler.query_app_data("application_form", "dynamic_app_data")[0][0])
-        input_text = self.ids.item_name_input.text.split(" ")
+            # bottom lines format item input text to capitalize first letter of every word and stores in item_name variable!
+            item_name = ' '.join(list(map(lambda x: x.capitalize(), input_text)))
 
-        # bottom lines format item input text to capitalize first letter of every word and stores in item_name variable!
-        item_name = ' '.join(list(map(lambda x: x.capitalize(), input_text)))
+            if not self.empty_textField(item_name):  # if textfield is not empty!
+                if item_name not in form_items:  # if item is not already in the application form
 
-        if not self.empty_textField(item_name):  # if textfield is not empty!
-            if item_name not in form_items:  # if item is not already in the application form
+                    if self.ids.drop_item.text == "At Top":
+                        form_items.insert(0, item_name)  # inserts new item at index 0
 
-                if self.ids.drop_item.text == "At Top":
-                    form_items.insert(0, item_name)  # inserts new item at index 0
+                    elif self.ids.drop_item.text == "At Bottom":
+                        form_items.append(item_name)  # inserts new item at the last index
 
-                elif self.ids.drop_item.text == "At Bottom":
-                    form_items.append(item_name)  # inserts new item at the last index
+                    else:
+                        place_item = ' '.join([v for v in self.ids.drop_item.text.split(" ") if v != "After"])
+                        index_ = form_items.index(place_item) + 1
+                        form_items.insert(index_, item_name)  # inserts new item after the selected dropdown item
+
+                    dataHandler.update_app_data("dynamic_app_data", "application_form", repr(form_items))
+                    dataHandler.add_column('cadet_application_data', item_name, 'No Data To Show')
+                    toast("Item Successfully Added To Application Form!")
+
+                    self.ids.item_name_input.text = ''
+                    self.ids.drop_item.text = 'At Top'
+
+                    # this following code clears the self.form_items_name list to update with the newly added item in form
+                    self.form_items_names.clear()
+                    self.form_items_names = eval(
+                        dataHandler.query_app_data("application_form", "dynamic_app_data")[0][0])
 
                 else:
-                    place_item = ' '.join([v for v in self.ids.drop_item.text.split(" ") if v != "After"])
-                    index_ = form_items.index(place_item) + 1
-                    form_items.insert(index_, item_name)  # inserts new item after the selected dropdown item
-
-                dataHandler.update_app_data("dynamic_app_data", "application_form", repr(form_items))
-                dataHandler.add_column('cadet_application_data', item_name, 'No Data To Show')
-                toast("Item Successfully Added To Application Form!")
-
-                self.ids.item_name_input.text = ''
-                self.ids.drop_item.text = 'At Top'
-
-                # this following code clears the self.form_items_name list to update with the newly added item in form
-                self.form_items_names.clear()
-                self.form_items_names = eval(dataHandler.query_app_data("application_form", "dynamic_app_data")[0][0])
-
+                    toast(f'{item_name} is already in the form!')
             else:
-                toast(f'{item_name} is already in the form!')
-        else:
-            toast("Enter a valid item name please!")
+                toast("Enter a valid item name please!")
+        except mysql.connector.errors.DatabaseError:
+            toast("Please check your internet connection")
 
     def edit_item(self):
+        try:
+            if not self.empty_textField(self.ids.item_name_input.text):  # if textfield is not empty!
 
-        if not self.empty_textField(self.ids.item_name_input.text):  # if textfield is not empty!
+                # this following code formats the textfield input to Capitalize every first word
+                input_text = self.ids.item_name_input.text.split(" ")
+                item_new_name = ' '.join(list(map(lambda x: x.capitalize(), input_text)))
 
-            # this following code formats the textfield input to Capitalize every first word
-            input_text = self.ids.item_name_input.text.split(" ")
-            item_new_name = ' '.join(list(map(lambda x: x.capitalize(), input_text)))
+                if item_new_name not in self.form_items_names:
 
-            if item_new_name not in self.form_items_names:
+                    if self.ids.drop_item.text in self.form_items_names:  # proceed if what user trying to edit is in the list
+                        index = self.form_items_names.index(
+                            self.ids.drop_item.text)  # index of the item user is trying to edit
+                        self.form_items_names.insert(index,
+                                                     item_new_name)  # insert new edited name of item in that index
+                        self.form_items_names.remove(
+                            self.form_items_names[index + 1])  # remove prev item that's been edited
 
-                if self.ids.drop_item.text in self.form_items_names:  # proceed if what user trying to edit is in the list
-                    index = self.form_items_names.index(
-                        self.ids.drop_item.text)  # index of the item user is trying to edit
-                    self.form_items_names.insert(index,
-                                                 item_new_name)  # insert new edited name of item in that index
-                    self.form_items_names.remove(
-                        self.form_items_names[index + 1])  # remove prev item that's been edited
+                        new_form_items = [v for v in self.form_items_names]  # looping through list to format with a ':'
+                        dataHandler.update_app_data("dynamic_app_data", "application_form", repr(new_form_items))
+                        old_col_name = ''
+                        new_col_name = ''
+                        if self.ids.drop_item.text.count("'") > 0:
+                            temp_list = []
+                            for i in self.ids.drop_item.text.split(" "):
+                                if i.count("'") > 0:
+                                    temp_list.append(i.split("'")[0])
+                                else:
+                                    temp_list.append(i)
+                            old_col_name = '_'.join(temp_list)
+                        else:
+                            old_col_name = '_'.join(self.ids.drop_item.text.split(" "))
+                        if self.ids.item_name_input.text.count("'") > 0:
+                            temp_list = []
+                            for i in self.ids.item_name_input.text.split(" "):
+                                if i.count("'") > 0:
+                                    temp_list.append(i.split("'")[0].capitalize())
+                                else:
+                                    temp_list.append(i.capitalize())
+                            new_col_name = '_'.join(temp_list)
+                        else:
+                            new_col_name = '_'.join([v.capitalize() for v in self.ids.item_name_input.text.split(" ")])
+                        dataHandler.change_col_name('cadet_application_data', old_col_name, new_col_name)
+                        toast("Item Name Updated!")
+                        self.ids.item_name_input.text = ''
 
-                    new_form_items = [v for v in self.form_items_names]  # looping through list to format with a ':'
-                    dataHandler.update_app_data("dynamic_app_data", "application_form", repr(new_form_items))
-                    old_col_name = ''
-                    new_col_name = ''
-                    if self.ids.drop_item.text.count("'") > 0:
-                        temp_list = []
-                        for i in self.ids.drop_item.text.split(" "):
-                            if i.count("'") > 0:
-                                temp_list.append(i.split("'")[0])
-                            else:
-                                temp_list.append(i)
-                        old_col_name = '_'.join(temp_list)
                     else:
-                        old_col_name = '_'.join(self.ids.drop_item.text.split(" "))
-                    if self.ids.item_name_input.text.count("'") > 0:
-                        temp_list = []
-                        for i in self.ids.item_name_input.text.split(" "):
-                            if i.count("'") > 0:
-                                temp_list.append(i.split("'")[0].capitalize())
-                            else:
-                                temp_list.append(i.capitalize())
-                        new_col_name = '_'.join(temp_list)
-                    else:
-                        new_col_name = '_'.join([v.capitalize() for v in self.ids.item_name_input.text.split(" ")])
-                    dataHandler.change_col_name('cadet_application_data', old_col_name, new_col_name)
-                    toast("Item Name Updated!")
-                    self.ids.item_name_input.text = ''
-
+                        toast("item is not in the list!")
                 else:
-                    toast("item is not in the list!")
-            else:
-                toast(f'{item_new_name} is already in the list')
+                    toast(f'{item_new_name} is already in the list')
 
-        else:
-            toast("Enter a valid item name please!")
+            else:
+                toast("Enter a valid item name please!")
+        except mysql.connector.errors.DatabaseError:
+            toast("Please check your internet connection")
 
     def empty_textField(self, textField_text):  # if user did not put anything in textfield it returns True
 
@@ -794,27 +830,30 @@ class EditFormItemWindow(Screen):
         self.dialog.open()
 
     def remove_item(self, instance):
-        if self.ids.drop_item.text not in dataHandler.primary_form_items():
-            if self.ids.drop_item.text.count("'") > 0:
-                temp_list = []
-                for i in self.ids.drop_item.text.split(" "):
-                    if i.count("'") > 0:
-                        temp_list.append(i.split("'")[0])
-                    else:
-                        temp_list.append(i)
-                dataHandler.drop_column('cadet_application_data', '_'.join(temp_list))
+        try:
+            if self.ids.drop_item.text not in dataHandler.primary_form_items():
+                if self.ids.drop_item.text.count("'") > 0:
+                    temp_list = []
+                    for i in self.ids.drop_item.text.split(" "):
+                        if i.count("'") > 0:
+                            temp_list.append(i.split("'")[0])
+                        else:
+                            temp_list.append(i)
+                    dataHandler.drop_column('cadet_application_data', '_'.join(temp_list))
 
+                else:
+                    dataHandler.drop_column('cadet_application_data', '_'.join(self.ids.drop_item.text.split(" ")))
+
+                self.form_items_names.remove(self.ids.drop_item.text)
+                updated_form_items_list = [v for v in self.form_items_names]
+                dataHandler.update_app_data("dynamic_app_data", "application_form", repr(updated_form_items_list))
+                toast(f"{self.ids.drop_item.text} removed from Application Form")
+                self.ids.drop_item.text = self.form_items_names[0]
+                self.dialog.dismiss()
             else:
-                dataHandler.drop_column('cadet_application_data', '_'.join(self.ids.drop_item.text.split(" ")))
-
-            self.form_items_names.remove(self.ids.drop_item.text)
-            updated_form_items_list = [v for v in self.form_items_names]
-            dataHandler.update_app_data("dynamic_app_data", "application_form", repr(updated_form_items_list))
-            toast(f"{self.ids.drop_item.text} removed from Application Form")
-            self.ids.drop_item.text = self.form_items_names[0]
-            self.dialog.dismiss()
-        else:
-            toast("Cannot Delete Primary Form Item!")
+                toast("Cannot Delete Primary Form Item!")
+        except mysql.connector.errors.DatabaseError:
+            toast("Please check your internet connection")
 
     def do_stuffs(self):
 
@@ -845,23 +884,25 @@ class AdminProfile(Screen):
             self.ids.nav_dash.disabled = True
 
     def show_admin(self):
+        try:
+            self.adm_info = admin.admin_info()
+            admin_data = admin.fetch_admin_data()  # get admin data from database
 
-        self.adm_info = admin.admin_info()
-        admin_data = admin.fetch_admin_data()  # get admin data from database
+            # showing profile photo on app
+            image = dataHandler.query_admin('profile_photo')
+            data = io.BytesIO(image)
+            img = CoreImage(data, ext="png").texture
+            self.ids.admin_profile_photo.texture = img
+            self.info_dic = {}
 
-        # showing profile photo on app
-        image = dataHandler.query_admin('profile_photo')
-        data = io.BytesIO(image)
-        img = CoreImage(data, ext="png").texture
-        self.ids.admin_profile_photo.texture = img
-        self.info_dic = {}
-
-        for v in range(len(self.adm_info)):
-            self.item = TwoLineListItem(text=self.adm_info[v], secondary_text=admin_data[v + 4],
-                                        on_press=lambda x: self.show_data())
-            self.item.id = self.item.text
-            self.info_dic[self.item.id] = self.item
-            self.ids.admin_info.add_widget(self.item)
+            for v in range(len(self.adm_info)):
+                self.item = TwoLineListItem(text=self.adm_info[v], secondary_text=admin_data[v + 4],
+                                            on_press=lambda x: self.show_data())
+                self.item.id = self.item.text
+                self.info_dic[self.item.id] = self.item
+                self.ids.admin_info.add_widget(self.item)
+        except mysql.connector.errors.DatabaseError:
+            toast("Please check your internet connection")
 
     def show_data(self):
         for v in self.info_dic.values():
@@ -877,30 +918,34 @@ class ViewApplicantScreen(Screen):
         self.applicants_dic = {}
 
     def show_applicant_list(self):
-        scroll_view = ScrollView()
-        md_list = MDList()
-        applicants = dataHandler.query_app_data("*", "cadet_application_data", "Status", self.applicant_type)
-        if applicants:
-            for applicant in applicants:
-                applicant_item = TwoLineListItem(
-                    text=dataHandler.query_app_data('Name', 'cadet_application_data', "Status", self.applicant_type)[
-                        applicants.index(applicant)][0],
-                    secondary_text=
-                    dataHandler.query_app_data('Email', 'cadet_application_data', "Status", self.applicant_type)[
-                        applicants.index(applicant)][0], on_release=lambda x: self.view_applicant())
-                applicant_item.id = applicant_item.text
-                self.applicants_dic[applicant_item.id] = applicant_item
-                md_list.add_widget(applicant_item)
-        else:
-            if self.applicant_type == "Pending":
-                md_list.add_widget(TwoLineListItem(text="No Applicants To Show", secondary_text=''))
-            elif self.applicant_type == "Approved":
-                md_list.add_widget(TwoLineListItem(text="No Applicants To Review", secondary_text=''))
+        try:
+            scroll_view = ScrollView()
+            md_list = MDList()
+            applicants = dataHandler.query_app_data("*", "cadet_application_data", "Status", self.applicant_type)
+            if applicants:
+                for applicant in applicants:
+                    applicant_item = TwoLineListItem(
+                        text=
+                        dataHandler.query_app_data('Name', 'cadet_application_data', "Status", self.applicant_type)[
+                            applicants.index(applicant)][0],
+                        secondary_text=
+                        dataHandler.query_app_data('Email', 'cadet_application_data', "Status", self.applicant_type)[
+                            applicants.index(applicant)][0], on_release=lambda x: self.view_applicant())
+                    applicant_item.id = applicant_item.text
+                    self.applicants_dic[applicant_item.id] = applicant_item
+                    md_list.add_widget(applicant_item)
             else:
-                md_list.add_widget(TwoLineListItem(text="No Cadets To Show", secondary_text=''))
+                if self.applicant_type == "Pending":
+                    md_list.add_widget(TwoLineListItem(text="No Applicants To Show", secondary_text=''))
+                elif self.applicant_type == "Approved":
+                    md_list.add_widget(TwoLineListItem(text="No Applicants To Review", secondary_text=''))
+                else:
+                    md_list.add_widget(TwoLineListItem(text="No Cadets To Show", secondary_text=''))
 
-        scroll_view.add_widget(md_list)
-        self.add_widget(scroll_view)
+            scroll_view.add_widget(md_list)
+            self.add_widget(scroll_view)
+        except mysql.connector.errors.DatabaseError:
+            toast("Please check your internet connection")
 
     def view_applicant(self):
         for applicant in self.applicants_dic.values():
@@ -952,33 +997,37 @@ class ShowApplicantInfoScreen(Screen):
         }
 
     def show_applicant(self):
-        self.cadet_cols = [(' '.join(v.split("_"))) for v in dataHandler.query_cadet_col_name()]
-        self.cadet_cols.insert(0, "Status")
-        cadet_data = [i for i in
-                      [v for v in dataHandler.query_app_data("*", "cadet_application_data") if
-                       (self.cadet_email_address in v)][0]]
-        cadet_data.remove(cadet_data[self.cadet_cols.index("Profile Photo")])
-        self.cadet_cols.remove("Profile Photo")
+        try:
+            self.cadet_cols = [(' '.join(v.split("_"))) for v in dataHandler.query_cadet_col_name()]
+            self.cadet_cols.insert(0, "Status")
+            cadet_data = [i for i in
+                          [v for v in dataHandler.query_app_data("*", "cadet_application_data") if
+                           (self.cadet_email_address in v)][0]]
+            cadet_data.remove(cadet_data[self.cadet_cols.index("Profile Photo")])
+            self.cadet_cols.remove("Profile Photo")
 
-        # showing profile photo on app
-        image = \
-            dataHandler.query_app_data('Profile_Photo', 'cadet_application_data', 'Email', self.cadet_email_address)[0][
-                0]
-        data = io.BytesIO(image)
-        img = CoreImage(data, ext="png").texture
-        self.ids.cadet_profile_photo.texture = img
-        self.info_dic = {}
+            # showing profile photo on app
+            image = \
+                dataHandler.query_app_data('Profile_Photo', 'cadet_application_data', 'Email',
+                                           self.cadet_email_address)[0][
+                    0]
+            data = io.BytesIO(image)
+            img = CoreImage(data, ext="png").texture
+            self.ids.cadet_profile_photo.texture = img
+            self.info_dic = {}
 
-        for v in range(len(self.cadet_cols)):
-            if self.cadet_cols[v] == "Facebook Id":
-                self.item = TwoLineListItem(text=self.cadet_cols[v], secondary_text=f'facebook.com/{cadet_data[v]}',
-                                            on_press=lambda x: self.show_cadet_data())
-            else:
-                self.item = TwoLineListItem(text=self.cadet_cols[v], secondary_text=cadet_data[v],
-                                            on_press=lambda x: self.show_cadet_data())
-            self.item.id = self.item.text
-            self.info_dic[self.item.id] = self.item
-            self.ids.cadet_info.add_widget(self.item)
+            for v in range(len(self.cadet_cols)):
+                if self.cadet_cols[v] == "Facebook Id":
+                    self.item = TwoLineListItem(text=self.cadet_cols[v], secondary_text=f'facebook.com/{cadet_data[v]}',
+                                                on_press=lambda x: self.show_cadet_data())
+                else:
+                    self.item = TwoLineListItem(text=self.cadet_cols[v], secondary_text=cadet_data[v],
+                                                on_press=lambda x: self.show_cadet_data())
+                self.item.id = self.item.text
+                self.info_dic[self.item.id] = self.item
+                self.ids.cadet_info.add_widget(self.item)
+        except mysql.connector.errors.DatabaseError:
+            toast("Please check your internet connection")
 
     def show_cadet_data(self):
         for v in self.info_dic.values():
@@ -986,46 +1035,55 @@ class ShowApplicantInfoScreen(Screen):
                 toast(f'{v.text} : {v.secondary_text}', duration=3)
 
     def callback(self, instance):
-        if instance.icon == 'check':
-            if self.manager.get_screen("ViewApplicantScreen").applicant_type == "Pending":
-                dataHandler.update_app_data('cadet_application_data', 'Status', 'Approved', 'Email',
-                                            self.cadet_email_address)
-                toast("Cadet Application Approved!")
+        try:
+            if instance.icon == 'check':
+                if self.manager.get_screen("ViewApplicantScreen").applicant_type == "Pending":
+                    dataHandler.update_app_data('cadet_application_data', 'Status', 'Approved', 'Email',
+                                                self.cadet_email_address)
+                    toast("Cadet Application Approved!")
+
+                else:
+                    if dataHandler.has_internet():
+                        if dataHandler.query_app_data('otp_manager_1', 'dynamic_app_data')[0][0] < 20 or \
+                                dataHandler.query_app_data('otp_manager_2', 'dynamic_app_data')[0][0] < 20:
+                            dataHandler.update_app_data('cadet_application_data', 'Status', 'Cadet', 'Email',
+                                                        self.cadet_email_address)
+                            mail_handler.mail_by_thread("cadet", self.cadet_email_address,
+                                                        mail_handler.send_cadet_id_pass)
+                            dataHandler.update_otp_counter('increase')
+                            toast("Cadet Status Updated!")
+                        else:
+                            toast("Cadet Adding Limit Ended. Please try again after 24 hours")
+                    else:
+                        toast("Please Check Your Internet Connection!")
+                self.manager.current = "ViewApplicantScreen"
+                self.manager.get_screen("ViewApplicantScreen").applicants_dic = {}
+                self.manager.get_screen("ViewApplicantScreen").show_applicant_list()
+
+            elif instance.icon == 'delete':
+                self.dialog.open()
+
+            elif instance.icon == 'facebook-messenger':
+                webbrowser.open(
+                    f'https://www.m.me/{dataHandler.query_app_data("Facebook_Id", "cadet_application_data", "Email", self.cadet_email_address)[0][0].split("/")[-1]}')
 
             else:
-                if dataHandler.has_internet():
-                    if dataHandler.query_app_data('otp_manager_1', 'dynamic_app_data')[0][0] < 20 or \
-                            dataHandler.query_app_data('otp_manager_2', 'dynamic_app_data')[0][0] < 20:
-                        dataHandler.update_app_data('cadet_application_data', 'Status', 'Cadet', 'Email',
-                                                    self.cadet_email_address)
-                        mail_handler.mail_by_thread("cadet", self.cadet_email_address, mail_handler.send_cadet_id_pass)
-                        dataHandler.update_otp_counter('increase')
-                        toast("Cadet Status Updated!")
-                    else:
-                        toast("Cadet Adding Limit Ended. Please try again after 24 hours")
-                else:
-                    toast("Please Check Your Internet Connection!")
-            self.manager.current = "ViewApplicantScreen"
-            self.manager.get_screen("ViewApplicantScreen").applicants_dic = {}
-            self.manager.get_screen("ViewApplicantScreen").show_applicant_list()
+                self.ids.floating_btn.close_stack()
 
-        elif instance.icon == 'delete':
-            self.dialog.open()
-
-        elif instance.icon == 'facebook-messenger':
-            webbrowser.open(
-                f'https://www.m.me/{dataHandler.query_app_data("Facebook_Id", "cadet_application_data", "Email", self.cadet_email_address)[0][0].split("/")[-1]}')
-
-        else:
-            self.ids.floating_btn.close_stack()
+        except mysql.connector.errors.DatabaseError:
+            toast("Please check your internet connection")
 
     def remove_item(self, instance):
-        dataHandler.delete_query('cadet_application_data', 'Email', self.cadet_email_address)
-        self.manager.get_screen("ViewApplicantScreen").applicants_dic = {}
-        self.manager.get_screen("ViewApplicantScreen").show_applicant_list()
-        self.manager.current = "ViewApplicantScreen"
-        toast("Cadet Application Approved!")
-        self.dialog.dismiss()
+        try:
+            dataHandler.delete_query('cadet_application_data', 'Email', self.cadet_email_address)
+            self.manager.get_screen("ViewApplicantScreen").applicants_dic = {}
+            self.manager.get_screen("ViewApplicantScreen").show_applicant_list()
+            self.manager.current = "ViewApplicantScreen"
+            toast("Cadet Application Approved!")
+            self.dialog.dismiss()
+
+        except mysql.connector.errors.DatabaseError:
+            toast("Please check your internet connection")
 
     def close_dialog(self, instance):
         self.dialog.dismiss()
@@ -1043,34 +1101,39 @@ class CadetDash(Screen):
         self.cadet_pass = ''
 
     def show_cadet(self):
+        try:
+            self.cadet_cols = [' '.join(v.split("_")) for v in dataHandler.query_cadet_col_name() if
+                               v != "Cadet_Password"]
+            cadet_data = [v for v in
+                          dataHandler.query_app_data('*', "cadet_application_data", "Cadet_Password", self.cadet_pass)[
+                              0] if
+                          v not in [self.cadet_pass, 'Cadet']]
+            cadet_data.remove(cadet_data[self.cadet_cols.index("Profile Photo")])
+            self.cadet_cols.remove("Profile Photo")
 
-        self.cadet_cols = [' '.join(v.split("_")) for v in dataHandler.query_cadet_col_name() if
-                           v != "Cadet_Password"]
-        cadet_data = [v for v in
-                      dataHandler.query_app_data('*', "cadet_application_data", "Cadet_Password", self.cadet_pass)[0] if
-                      v not in [self.cadet_pass, 'Cadet']]
-        cadet_data.remove(cadet_data[self.cadet_cols.index("Profile Photo")])
-        self.cadet_cols.remove("Profile Photo")
+            # showing profile photo on app
+            image = \
+                dataHandler.query_app_data('Profile_Photo', 'cadet_application_data', 'Cadet_Password',
+                                           self.cadet_pass)[0][
+                    0]
+            data = io.BytesIO(image)
+            img = CoreImage(data, ext="png").texture
+            self.ids.cadet_profile_photo.texture = img
+            self.info_dic = {}
 
-        # showing profile photo on app
-        image = \
-            dataHandler.query_app_data('Profile_Photo', 'cadet_application_data', 'Cadet_Password', self.cadet_pass)[0][
-                0]
-        data = io.BytesIO(image)
-        img = CoreImage(data, ext="png").texture
-        self.ids.cadet_profile_photo.texture = img
-        self.info_dic = {}
+            for v in range(len(self.cadet_cols)):
+                if self.cadet_cols[v] == "Facebook Id":
+                    self.item = TwoLineListItem(text=self.cadet_cols[v], secondary_text=f'facebook.com/{cadet_data[v]}',
+                                                on_press=lambda x: self.show_cadet_data())
+                else:
+                    self.item = TwoLineListItem(text=self.cadet_cols[v], secondary_text=cadet_data[v],
+                                                on_press=lambda x: self.show_cadet_data())
+                self.item.id = self.item.text
+                self.info_dic[self.item.id] = self.item
+                self.ids.cadet_info.add_widget(self.item)
 
-        for v in range(len(self.cadet_cols)):
-            if self.cadet_cols[v] == "Facebook Id":
-                self.item = TwoLineListItem(text=self.cadet_cols[v], secondary_text=f'facebook.com/{cadet_data[v]}',
-                                            on_press=lambda x: self.show_cadet_data())
-            else:
-                self.item = TwoLineListItem(text=self.cadet_cols[v], secondary_text=cadet_data[v],
-                                            on_press=lambda x: self.show_cadet_data())
-            self.item.id = self.item.text
-            self.info_dic[self.item.id] = self.item
-            self.ids.cadet_info.add_widget(self.item)
+        except mysql.connector.errors.DatabaseError:
+            toast("Please check your internet connection")
 
     def show_cadet_data(self):
         for v in self.info_dic.values():
@@ -1089,14 +1152,17 @@ class NoticeScreen(Screen):
         md_list = MDList()
         action_button = MDFloatingActionButton(icon='plus', pos_hint={'center_x': 0.8, 'center_y': 0.1})
         action_button.bind(on_release=self.create_notice)
+        try:
+            notices = dataHandler.fetch_notices()
+            for notice in notices:
+                notice_item = TwoLineListItem(text=notice[0], secondary_text=notice[1],
+                                              on_release=lambda x: self.view_notice())
+                notice_item.id = notice_item.text
+                self.notice_dic[notice_item.id] = notice_item
+                md_list.add_widget(notice_item)
 
-        notices = dataHandler.fetch_notices()
-        for notice in notices:
-            notice_item = TwoLineListItem(text=notice[0], secondary_text=notice[1],
-                                          on_release=lambda x: self.view_notice())
-            notice_item.id = notice_item.text
-            self.notice_dic[notice_item.id] = notice_item
-            md_list.add_widget(notice_item)
+        except mysql.connector.errors.DatabaseError:
+            toast("Please check your internet connection")
 
         scroll_view.add_widget(md_list)
         self.add_widget(scroll_view)
@@ -1125,6 +1191,7 @@ class ShowNoticeScreen(Screen):
         self.title = ''
         self.text = ''
         self.delete_btn = MDIconButton(icon="delete", pos_hint={'center_x': 0.9, 'center_y': 0.92})
+        self.delete_btn.bind(on_release=self.open_del_dialog)
         self.dialog = MDDialog(title="Are You Sure You Want To Delete This Notice?",
                                size_hint=(None, None),
                                _spacer_top=sp(15),
@@ -1132,6 +1199,9 @@ class ShowNoticeScreen(Screen):
                                buttons=[MDFlatButton(text='Yes', on_release=self.delete_notice),
                                         MDFlatButton(text='No', on_release=self.close_dialog)]
                                )
+
+    def open_del_dialog(self, instance):
+        self.dialog.open()
 
     def add_del_btn(self):
         self.add_widget(self.delete_btn)
@@ -1144,16 +1214,20 @@ class ShowNoticeScreen(Screen):
         self.ids.notice_text.text = self.text
 
     def delete_notice(self, instance):
-        dataHandler.delete_query('notice_board', 'Notice_Title', self.ids.notice_title.text)
-        self.title = dataHandler.fetch_notices()[-1][0]
-        self.text = dataHandler.fetch_notices()[-1][1]
-        self.manager.get_screen("NoticeScreen").notice_dic = {}
-        self.manager.get_screen("NoticeScreen").clear_widgets()
-        self.manager.get_screen("NoticeScreen").notice_dic = {}
-        self.manager.get_screen("NoticeScreen").show_notices()
-        self.manager.current = "NoticeScreen"
-        toast("Notice Deleted Successfully")
-        self.dialog.dismiss()
+        try:
+            dataHandler.delete_query('notice_board', 'Notice_Title', self.ids.notice_title.text)
+            self.title = dataHandler.fetch_notices()[-1][0]
+            self.text = dataHandler.fetch_notices()[-1][1]
+            self.manager.get_screen("NoticeScreen").notice_dic = {}
+            self.manager.get_screen("NoticeScreen").clear_widgets()
+            self.manager.get_screen("NoticeScreen").notice_dic = {}
+            self.manager.get_screen("NoticeScreen").show_notices()
+            self.manager.current = "NoticeScreen"
+            toast("Notice Deleted Successfully")
+            self.dialog.dismiss()
+
+        except mysql.connector.errors.DatabaseError:
+            toast("Please check your internet connection")
 
     def close_dialog(self, instance):
         self.dialog.dismiss()
@@ -1165,17 +1239,21 @@ class CreateNoticeScreen(Screen):
         super(CreateNoticeScreen, self).__init__(**kwargs)
 
     def create_notice(self, notice_title, notice_text):
-        notice_title = notice_title.capitalize()
-        if not notice_title.isspace() and not notice_text.isspace() and notice_title != '' and notice_text != '':
-            dataHandler.add_notice(notice_title, notice_text)
-            self.ids.notice_title.text = ''
-            self.ids.notice_textfield.text = ''
-            toast('Notice Successfully Added!')
-        else:
-            if notice_title.isspace():
-                toast('Title cannot be empty!')
+        try:
+            notice_title = notice_title.capitalize()
+            if not notice_title.isspace() and not notice_text.isspace() and notice_title != '' and notice_text != '':
+                dataHandler.add_notice(notice_title, notice_text)
+                self.ids.notice_title.text = ''
+                self.ids.notice_textfield.text = ''
+                toast('Notice Successfully Added!')
             else:
-                toast('Notice cannot be empty!')
+                if notice_title.isspace():
+                    toast('Title cannot be empty!')
+                else:
+                    toast('Notice cannot be empty!')
+
+        except mysql.connector.errors.DatabaseError:
+            toast("Please check your internet connection")
 
 
 class AboutScreen(Screen):
@@ -1197,8 +1275,6 @@ class SettingsScreen(Screen):
 class MainApp(MDApp):
     def build(self):
         self.title = "App By SIS"
-        # self.has_internet = dataHandler.has_internet()
-
         theme_color = dataHandler.query_app_data("theme_color", "static_app_data")[0][0]
         primary_palette = dataHandler.query_app_data("primary_palette", "static_app_data")[0][0]
         self.theme_cls.theme_style = theme_color
@@ -1208,11 +1284,22 @@ class MainApp(MDApp):
 
         return kvFile
 
+    def on_start(self):
+        try:
+            dataHandler.create_app_data()  # create static (on device memory) and dynamic (online ) app data
+            dataHandler.set_database()
+        except mysql.connector.errors.DatabaseError:
+            toast("Please check your internet connection")
+
     def change_theme_style(self):
-        self.theme_cls.theme_style = (
-            "Dark" if self.theme_cls.theme_style == "Light" else "Light"
-        )
-        dataHandler.update_app_data("static_app_data", 'theme_color', self.theme_cls.theme_style)
+        try:
+            self.theme_cls.theme_style = (
+                "Dark" if self.theme_cls.theme_style == "Light" else "Light"
+            )
+            dataHandler.update_app_data("static_app_data", 'theme_color', self.theme_cls.theme_style)
+
+        except mysql.connector.errors.DatabaseError:
+            toast("Please check your internet connection")
 
     def change_primary_palette(self, palette_color):
         self.theme_cls.primary_palette = palette_color

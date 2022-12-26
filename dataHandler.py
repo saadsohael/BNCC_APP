@@ -55,10 +55,10 @@ def update_app_data(table_name, column_name, new_data, where=None, condition=Non
             db.commit()
         else:
             db = mysql.connector.connect(
-                host="localhost",
-                user="root",
-                passwd="saad1122002",
-                database="first_db"
+                host="sql6.freesqldatabase.com",
+                user="sql6586509",
+                passwd="FQuSkWLDlI",
+                database="sql6586509"
             )
             cursor = db.cursor()
 
@@ -76,10 +76,10 @@ def update_app_data(table_name, column_name, new_data, where=None, condition=Non
 
         else:
             db = mysql.connector.connect(
-                host="localhost",
-                user="root",
-                passwd="saad1122002",
-                database="first_db"
+                host="sql6.freesqldatabase.com",
+                user="sql6586509",
+                passwd="FQuSkWLDlI",
+                database="sql6586509"
             )
             cursor = db.cursor()
 
@@ -94,10 +94,10 @@ def query_app_data(query, table_name, where=None, condition=None):
         db = sqlite3.connect("app_data.db")
     else:
         db = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            passwd="saad1122002",
-            database="first_db"
+            host="sql6.freesqldatabase.com",
+            user="sql6586509",
+            passwd="FQuSkWLDlI",
+            database="sql6586509"
         )
     cursor = db.cursor()
 
@@ -141,10 +141,10 @@ def create_app_data():
     db.close()
 
     online_db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        passwd="saad1122002",
-        database="first_db"
+        host="sql6.freesqldatabase.com",
+        user="sql6586509",
+        passwd="FQuSkWLDlI",
+        database="sql6586509"
     )
 
     primary_application_form = repr(primary_form_items())
@@ -214,14 +214,14 @@ def create_offline_datatable(user_offline_data, user_id_col, user_password_col):
 
 def is_admin(admin_username, admin_password):
     db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        passwd="saad1122002",
-        database="first_db"
+        host="sql6.freesqldatabase.com",
+        user="sql6586509",
+        passwd="FQuSkWLDlI",
+        database="sql6586509"
     )
 
     cursor = db.cursor()
-    cursor.execute("SELECT admin_username, admin_email, admin_password_salt, admin_password FROM first_db.admin_data")
+    cursor.execute("SELECT admin_username, admin_email, admin_password_salt, admin_password FROM sql6586509.admin_data")
     username = ''
     adm_email = ''
     pass_salt = ''
@@ -245,10 +245,10 @@ def is_admin(admin_username, admin_password):
 
 def is_cadet(id, password):
     db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        passwd="saad1122002",
-        database="first_db"
+        host="sql6.freesqldatabase.com",
+        user="sql6586509",
+        passwd="FQuSkWLDlI",
+        database="sql6586509"
     )
 
     cursor = db.cursor()
@@ -288,14 +288,14 @@ def otp_matched(user, otp, cadet_mail=None):
 
 def query_admin(query):
     db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        passwd="saad1122002",
-        database="first_db"
+        host="sql6.freesqldatabase.com",
+        user="sql6586509",
+        passwd="FQuSkWLDlI",
+        database="sql6586509"
     )
 
     cursor = db.cursor()
-    cursor.execute(f"SELECT {query} FROM first_db.admin_data")
+    cursor.execute(f"SELECT {query} FROM sql6586509.admin_data")
     data = None
     for v in cursor:
         data = v[0]
@@ -305,13 +305,13 @@ def query_admin(query):
 
 def query_cadet_col_name():
     db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        passwd="saad1122002",
-        database="first_db"
+        host="sql6.freesqldatabase.com",
+        user="sql6586509",
+        passwd="FQuSkWLDlI",
+        database="sql6586509"
     )
     c = db.cursor()
-    c.execute("SHOW COLUMNS FROM first_db.cadet_application_data")
+    c.execute("SHOW COLUMNS FROM sql6586509.cadet_application_data")
     data = [v[0] for v in c if v[0] != "Status"]
     return data
 
@@ -322,10 +322,10 @@ def drop_column(table_name, col_name):
 
     else:
         db = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            passwd="saad1122002",
-            database="first_db"
+            host="sql6.freesqldatabase.com",
+            user="sql6586509",
+            passwd="FQuSkWLDlI",
+            database="sql6586509"
         )
 
     cursor = db.cursor()
@@ -393,10 +393,10 @@ def otp_recently_sent(current_time_data):
 
 def update_otp_counter(command):
     db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        passwd="saad1122002",
-        database="first_db"
+        host="sql6.freesqldatabase.com",
+        user="sql6586509",
+        passwd="FQuSkWLDlI",
+        database="sql6586509"
     )
     c = db.cursor()
 
@@ -427,10 +427,10 @@ def update_otp_counter(command):
 
 def set_database():
     db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        passwd="saad1122002",
-        database="first_db"
+        host="sql6.freesqldatabase.com",
+        user="sql6586509",
+        passwd="FQuSkWLDlI",
+        database="sql6586509"
     )
     c = db.cursor()
     try:
@@ -469,10 +469,10 @@ def set_database():
 
 def add_column(table_name, new_col_name, default):
     db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        passwd="saad1122002",
-        database="first_db"
+        host="sql6.freesqldatabase.com",
+        user="sql6586509",
+        passwd="FQuSkWLDlI",
+        database="sql6586509"
     )
     c = db.cursor()
     if table_name == 'cadet_application_data':
@@ -498,10 +498,10 @@ def add_column(table_name, new_col_name, default):
 
 def change_col_name(table_name, old_col_name, new_col_name):
     db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        passwd="saad1122002",
-        database="first_db"
+        host="sql6.freesqldatabase.com",
+        user="sql6586509",
+        passwd="FQuSkWLDlI",
+        database="sql6586509"
     )
     c = db.cursor()
     c.execute(f"ALTER TABLE {table_name} CHANGE {old_col_name} {new_col_name} VARCHAR(255)")
@@ -511,10 +511,10 @@ def change_col_name(table_name, old_col_name, new_col_name):
 
 def add_notice(title, notice):
     db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        passwd="saad1122002",
-        database="first_db"
+        host="sql6.freesqldatabase.com",
+        user="sql6586509",
+        passwd="FQuSkWLDlI",
+        database="sql6586509"
     )
     c = db.cursor()
     c.execute("SELECT Notice_Title FROM notice_board")
@@ -536,10 +536,10 @@ def add_notice(title, notice):
 
 def fetch_notices():
     db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        passwd="saad1122002",
-        database="first_db"
+        host="sql6.freesqldatabase.com",
+        user="sql6586509",
+        passwd="FQuSkWLDlI",
+        database="sql6586509"
     )
     c = db.cursor()
     c.execute("SELECT * FROM notice_board")
@@ -558,10 +558,10 @@ def delete_query(table_name, where, condition):
         db.commit()
     else:
         db = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            passwd="saad1122002",
-            database="first_db"
+            host="sql6.freesqldatabase.com",
+            user="sql6586509",
+            passwd="FQuSkWLDlI",
+            database="sql6586509"
         )
         c = db.cursor()
         c.execute(f"DELETE FROM {table_name} WHERE {where} = (%s)", (condition,))
@@ -572,10 +572,10 @@ def delete_query(table_name, where, condition):
 
 def add_cadet_info(infolist):
     db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        passwd="saad1122002",
-        database="first_db"
+        host="sql6.freesqldatabase.com",
+        user="sql6586509",
+        passwd="FQuSkWLDlI",
+        database="sql6586509"
     )
     c = db.cursor()
     sign = ["%s"] * len(infolist)
@@ -603,44 +603,3 @@ def is_image(path):
         if extension in path.split("/")[-1]:
             return True
     return False
-
-
-# remember_user('cadet_offline_data', '105232', '1E2jWKKD', 'cadet_id')
-# print(query_app_data("application_form", "dynamic_app_data")[0][0])
-# print(query_app_data("*", "dynamic_app_data")[0][0])
-# print(query_app_data("theme_color", "static_app_data")[0][0])
-# print(query_app_data('otp_manager_2', 'dynamic_app_data'))
-# update_app_data("static_app_data","remember_check",False)
-# print(query_app_data('remember_check', 'static_app_data')[0][0])
-# update_app_data('offline_data', 'cadet_id', '1234')
-# print("rockdell420@gmail.com" in [v[0] for v in query_app_data("Email", "cadet_application_data", "Status", "Cadet")])
-# print(query_app_data('otp_salt', 'cadet_offline_data', 'cadet_email', "rockdell420@gmail.com")[0][0])
-# print(query_app_data("cadet_id", "cadet_offline_data"))
-# print(query_app_data("cadet_id", "cadet_offline_data"))
-# print([' '.join(v.split("_")) for v in query_cadet_col_name() if v != "Cadet_Password"])
-# print([v for v in query_app_data('*', "cadet_application_data", "Cadet_Password", 'saad_sohael')[0] if v != 'saad_sohael' and v!= 'Cadet'])
-
-"""
-        cadet_cols = dataHandler.query_cadet_col_name()
-        cadet_cols.insert(0, "Status")
-        data = [v for v in dataHandler.query_app_data("*", "cadet_application_data") if (email in v)][0]
-        for v in cadet_cols:
-            if v not in ["Cadet_Password", "Profile_Photo"]:
-                label = MDLabel(text=f'{v} : ', size_hint_x=0.55)
-                if v == "Height":
-                    label2 = MDLabel(text=f"{data[cadet_cols.index(v)]} inch", size_hint_x=0.45)
-                elif v == "Weight":
-                    label2 = MDLabel(text=f"{data[cadet_cols.index(v)]} kg", size_hint_x=0.45)
-                else:
-                    label2 = MDLabel(text=data[cadet_cols.index(v)], size_hint_x=0.45)
-                self.ids.applicant_info_grid.add_widget(label)
-                self.ids.applicant_info_grid.add_widget(label2)"""
-# delete_query('cadet_application_data','Name','Monoara')
-# cadet_cols = [(' '.join(v.split("_"))) for v in query_cadet_col_name()]
-# cadet_cols.insert(0, "Status")
-# cadet_data = [i for i in [v for v in query_app_data("*", "cadet_application_data") if ("sumaya.raj.bd@gmail.com" in v)][0]]
-# cadet_data.remove(cadet_data[cadet_cols.index("Profile Photo")])
-# cadet_cols.remove('Profile Photo')
-# print(cadet_cols)
-# print(cadet_data)
-

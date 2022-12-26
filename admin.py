@@ -19,10 +19,10 @@ def create_admin(username, password, image_path, admin_name, email_address, mobi
                  religion,
                  institution):
     db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        passwd="saad1122002",
-        database="first_db"
+        host="sql6.freesqldatabase.com",
+        user="sql6586509",
+        passwd="FQuSkWLDlI",
+        database="sql6586509"
     )
 
     cursor = db.cursor()
@@ -61,10 +61,10 @@ def create_admin(username, password, image_path, admin_name, email_address, mobi
 
 def update_password(new_pass):
     db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        passwd="saad1122002",
-        database="first_db"
+        host="sql6.freesqldatabase.com",
+        user="sql6586509",
+        passwd="FQuSkWLDlI",
+        database="sql6586509"
     )
 
     salt = bcrypt.gensalt()
@@ -80,10 +80,10 @@ def update_password(new_pass):
 
 def fetch_admin_data():
     db = mysql.connector.connect(
-        host="localhost",
-        user="root",
-        passwd="saad1122002",
-        database="first_db"
+        host="sql6.freesqldatabase.com",
+        user="sql6586509",
+        passwd="FQuSkWLDlI",
+        database="sql6586509"
     )
 
     c = db.cursor()
@@ -109,3 +109,5 @@ def add_admin_to_database():
         print('admin created!')
     else:
         print('try again!')
+
+

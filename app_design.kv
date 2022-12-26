@@ -179,7 +179,7 @@ WindowManager:
                 root.manager.current = "ViewApplicantScreen"
 
         MDRaisedButton:
-            text: "Create Notice"
+            text: "View Notice"
             on_release:
                 root.manager.get_screen("NoticeScreen").notice_dic = {}
                 root.manager.get_screen("NoticeScreen").show_notices()
@@ -701,7 +701,8 @@ WindowManager:
             cols: 3
             rows: 1
             spacing : 30
-            pos_hint: {'center_x':0.6}
+            pos_hint: {'center_x':0.5}
+            adaptive_size: True
 
             MDRectangleFlatButton:
                 text: "Gmail"
@@ -843,7 +844,10 @@ WindowManager:
             text: "Add or Edit Items"
             on_release:
                 root.manager.get_screen("EditFormItemWindow").ids.drop_item.text = root.manager.get_screen("EditFormItemWindow").form_items_names[0]
-                root.manager.current = 'EditFormItemWindow'
+                try:\
+                root.manager.current = 'EditFormItemWindow';
+                except:\
+                pass
 
         MDRectangleFlatButton:
             text: "Remove Items"
@@ -853,7 +857,10 @@ WindowManager:
                 root.manager.get_screen('EditFormItemWindow').ids.item_place_label.text = 'Select Item'
                 root.manager.get_screen('EditFormItemWindow').ids.item_name_input.disabled = True
                 root.manager.get_screen('EditFormItemWindow').ids.add_or_edit_btn.text = "Remove Item"
-                root.manager.current = 'EditFormItemWindow'
+                try:\
+                root.manager.current = 'EditFormItemWindow';
+                except:\
+                pass
 
 <EditFormItemWindow>:
     name: "EditFormItemWindow"

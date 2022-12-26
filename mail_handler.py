@@ -68,10 +68,10 @@ def send_pass_recovery_otp(user, toaddr):
             s.sendmail(fromaddr, toaddr, text)
 
             db = mysql.connector.connect(
-                host="localhost",
-                user="root",
-                passwd="saad1122002",
-                database="first_db"
+                host="sql6.freesqldatabase.com",
+                user="sql6586509",
+                passwd="FQuSkWLDlI",
+                database="sql6586509"
             )
 
             cursor = db.cursor()
@@ -197,13 +197,13 @@ def send_cadet_id_pass(no_use_argument, cadet_email):
         text = msg.as_string()
 
         # sending the mail
-        # s.sendmail(fromaddr, cadet_email, text)
+        s.sendmail(fromaddr, cadet_email, text)
 
         db = mysql.connector.connect(
-            host="localhost",
-            user="root",
-            passwd="saad1122002",
-            database="first_db"
+            host="sql6.freesqldatabase.com",
+            user="sql6586509",
+            passwd="FQuSkWLDlI",
+            database="sql6586509"
         )
 
         cursor = db.cursor()
@@ -221,6 +221,3 @@ def send_cadet_id_pass(no_use_argument, cadet_email):
         s.quit()
 
     return []
-
-
-# mail_by_thread("admin", "rockdell420@gmail.com", send_pass_recovery_otp)
