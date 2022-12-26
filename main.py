@@ -1246,7 +1246,8 @@ class CreateNoticeScreen(Screen):
         try:
             notice_title = notice_title.capitalize()
             if not notice_title.isspace() and not notice_text.isspace() and notice_title != '' and notice_text != '':
-                if len(notice_title) < self.ids.notice_title.max_text_length and len(notice_text) < self.ids.notice_textfield.max_text_length:
+                if len(notice_title) < self.ids.notice_title.max_text_length and len(
+                        notice_text) < self.ids.notice_textfield.max_text_length:
                     dataHandler.add_notice(notice_title, notice_text)
                     self.ids.notice_title.text = ''
                     self.ids.notice_textfield.text = ''
